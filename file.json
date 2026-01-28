@@ -1,0 +1,449 @@
+{
+  "irmaos": [
+    {
+      "cpf": "489.896.141-04",
+      "email": "dr.jorginho@hotmail.com",
+      "id": 1,
+      "nascimento": "11/26/1968",
+      "nome": "AGRINALDO JORGE RODRIGUES",
+      "whatsapp": "556596113306"
+    },
+    {
+      "ativo": false,
+      "cpf": "013.095.411-08",
+      "email": "",
+      "id": 2,
+      "nascimento": "3/27/1989",
+      "nome": "ALBERTO SANTIAGO FROÉS FILHO",
+      "whatsapp": ""
+    },
+    {
+      "cpf": "688.340.631-04",
+      "email": "dr.alcidesalves@hotmail.com",
+      "id": 3,
+      "nascimento": "3/15/1979",
+      "nome": "ALCIDES DA SILVA ALVES",
+      "whatsapp": "556592296850"
+    },
+    {
+      "ativo": false,
+      "cpf": "376.344.451-34",
+      "email": "moraes133@gmail.com",
+      "id": 4,
+      "nascimento": "12/3/1965",
+      "nome": "ANTONIO ROBERTO MONTEIRO DE MORAES",
+      "whatsapp": ""
+    },
+    {
+      "cpf": "522.255.771-53",
+      "email": "marques.adv2@gmail.com",
+      "id": 5,
+      "nascimento": "8/1/1973",
+      "nome": "ARLINDO MARQUES DE SOUZA FILHO",
+      "whatsapp": "556593252842"
+    },
+    {
+      "cpf": "285.099.941-53",
+      "email": "avelinobobatoneto@hotmail.com",
+      "id": 6,
+      "nascimento": "6/22/1966",
+      "nome": "AVELINO BOBATO NETO",
+      "whatsapp": "556596461822"
+    },
+    {
+      "cpf": "311.099.528-05",
+      "email": "bruno.andrade@imac.agr.br",
+      "id": 7,
+      "nascimento": "11/28/1988",
+      "nome": "BRUNO DE JESUS ANDRADE",
+      "whatsapp": "5514996882032"
+    },
+    {
+      "ativo": false,
+      "cpf": "032.036.191-80",
+      "email": "gallegolima@gmail.com",
+      "id": 8,
+      "nascimento": "11/28/1988",
+      "nome": "BRUNO VAZ GALLEGO LIMA",
+      "whatsapp": "556596801230"
+    },
+    {
+      "cpf": "174.280.898-08",
+      "email": "apoiojuridico@hotmail.com",
+      "id": 9,
+      "nascimento": "4/20/1973",
+      "nome": "FÁBIO MOREIRA FÉLIX",
+      "whatsapp": "556581411887"
+    },
+    {
+      "cpf": "221.989.728-16",
+      "email": "fabricio.p.santos@outlook.com",
+      "id": 10,
+      "nascimento": "2/28/1982",
+      "nome": "FABRICIO PEREIRA DOS SANTOS",
+      "whatsapp": "556984444435"
+    },
+    {
+      "cpf": "050.836.121-43",
+      "email": "biello2008@gmail.com",
+      "id": 11,
+      "nascimento": "12/4/1986",
+      "nome": "GABRIEL LIMA OLIVEIRA",
+      "whatsapp": "5565993523740"
+    },
+    {
+      "cpf": "689.173.681-15",
+      "email": "gleissonsebba@hotmail.com",
+      "id": 12,
+      "nascimento": "6/3/1978",
+      "nome": "GLEISSON PEREIRA SEBBA",
+      "whatsapp": "556581384760"
+    },
+    {
+      "cpf": "022.732.461-70",
+      "email": "gustao@oliveiraadvogados.com.br",
+      "id": 13,
+      "nascimento": "12/4/1986",
+      "nome": "GUSTAVO LIMA DE OLIVEIRA",
+      "whatsapp": "556599903179"
+    },
+    {
+      "cpf": "040.616.721-42",
+      "email": "henrique.gard@gmail.com",
+      "id": 14,
+      "nascimento": "4/13/1992",
+      "nome": "HENRIQUE PRADO OLVÍDIO DE MIRANDA",
+      "whatsapp": "556596205107"
+    },
+    {
+      "cpf": "488.697.751-00",
+      "email": "hpfannemuller@gmail.com",
+      "id": 15,
+      "nascimento": "12/3/1971",
+      "nome": "HUGO RODRIGUES PFANNEMULLER",
+      "whatsapp": "556599284858"
+    },
+    {
+      "cpf": "007.292.511-60",
+      "email": "",
+      "id": 16,
+      "nascimento": "",
+      "nome": "LUCAS MANOEL ARRUDA MARINHO",
+      "whatsapp": "556696061382"
+    },
+    {
+      "cpf": "901.192.581-53",
+      "email": "marcelodorileo@gmail.com",
+      "id": 17,
+      "nascimento": "5/27/1980",
+      "nome": "MARCELO FIGUEIRA BALBINO DORILEO",
+      "whatsapp": "556592246152"
+    },
+    {
+      "cpf": "460.622.111-91",
+      "email": "marcoaureliomonteiro8510@gmail.com",
+      "id": 18,
+      "nascimento": "10/17/1973",
+      "nome": "MARCO AURÉLIO MONTEIRO ARAÚJO",
+      "whatsapp": "556599725859"
+    },
+    {
+      "cpf": "588.372.722-00",
+      "email": "moysessabba2009@hotmail.com",
+      "id": 19,
+      "nascimento": "2/28/1977",
+      "nome": "MOYSES SABBA NETO",
+      "whatsapp": "556581753019"
+    },
+    {
+      "cpf": "CPF: 990.170.671-87",
+      "email": "",
+      "id": 20,
+      "nascimento": "",
+      "nome": "OUMAR KHALED ARAJI DAHROUG",
+      "whatsapp": "556599407075"
+    },
+    {
+      "cpf": "012.307.261-10",
+      "email": "paulodimaq@hotmail.com",
+      "id": 21,
+      "nascimento": "12/18/1985",
+      "nome": "PAULO HENRIQUE BOÇON",
+      "whatsapp": "556584192590"
+    },
+    {
+      "cpf": "346.559.301-44",
+      "email": "renildo.andrade@hotmail.com",
+      "id": 22,
+      "nascimento": "8/16/1965",
+      "nome": "RENILDO FOLHA ANDRADE",
+      "whatsapp": "556599820695"
+    },
+    {
+      "cpf": "015.883.430-57",
+      "email": "rodolfodhaubert@gmail.com",
+      "id": 23,
+      "nascimento": "3/7/1987",
+      "nome": "RODOLFO DUTRA HAUBERT",
+      "whatsapp": ""
+    },
+    {
+      "cpf": "788.557.481-49",
+      "email": "ronei.marins@gmail.com",
+      "id": 24,
+      "nascimento": "9/15/1975",
+      "nome": "RONEI DE OLIVEIRA MARINS",
+      "whatsapp": "556599726625"
+    },
+    {
+      "cpf": "344.865.341-15",
+      "email": "Salim.femina@hotmail.com",
+      "id": 25,
+      "nascimento": "9/7/1963",
+      "nome": "SALIM JOANDAT SALIM",
+      "whatsapp": "556599811395"
+    },
+    {
+      "cpf": "035.038.358-81",
+      "email": "vanderleimartello@hotmail.com",
+      "id": 26,
+      "nascimento": "11/12/1962",
+      "nome": "VANDERLEI MARTELO",
+      "whatsapp": "556584130585"
+    },
+    {
+      "cpf": "913.227.661-34",
+      "email": "",
+      "id": 27,
+      "nascimento": "",
+      "nome": "VICTOR AVELINO DE BARROS TAVARES",
+      "whatsapp": "556599740161"
+    },
+    {
+      "cpf": "015.548.681-06",
+      "email": "",
+      "id": 28,
+      "nascimento": "",
+      "nome": "EDUARDO VAZ DA SILVA",
+      "whatsapp": "556599172406"
+    }
+  ],
+  "pagamentos": [
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "",
+      "id_irmao": 1,
+      "obs": "",
+      "status": "EM_ABERTO",
+      "valor": 194
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 3,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 5,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "",
+      "id_irmao": 6,
+      "obs": "",
+      "status": "EM_ABERTO",
+      "valor": 511
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 7,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 9,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 10,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 11,
+      "obs": "Confirmado pelo sistema de confirmação pública",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 12,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 13,
+      "obs": "",
+      "status": "EM_ABERTO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 14,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "",
+      "id_irmao": 15,
+      "obs": "",
+      "status": "EM_ABERTO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 16,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 17,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 18,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2025-01",
+      "data_pagamento": "",
+      "id_irmao": 19,
+      "obs": "",
+      "status": "EM_ABERTO",
+      "valor": 400
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "",
+      "id_irmao": 19,
+      "obs": "",
+      "status": "EM_ABERTO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 20,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 21,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 22,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 145
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "",
+      "id_irmao": 23,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 24,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 25,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 26,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 27,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "competencia": "2026-01",
+      "data_pagamento": "2026-01-28",
+      "id_irmao": 28,
+      "obs": "",
+      "status": "PAGO",
+      "valor": 325
+    },
+    {
+      "id_irmao": 1,
+      "competencia": "2025-01",
+      "status": "EM_ABERTO",
+      "data_pagamento": "",
+      "obs": "",
+      "valor": 145
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Gestão de Mensalidades">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.webapp.json">
+    <title>Painel de Mensalidades</title>
+    <script>
+        // Verificação de autenticação
+        const SESSION_KEY = 'gestao_mensalidades_authenticated';
+        if (sessionStorage.getItem(SESSION_KEY) !== 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f4f9; color: #333; min-width: 780px; }
+        h2 { margin-top: 0; color: #2c3e50; }
+        .upload-area { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #2c3e50; color: #fff; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; }
+        tr:hover { background-color: #f9f9f9; }
+        [contenteditable="true"] { 
+            padding: 4px 8px; 
+            border: 1px dashed transparent; 
+            border-radius: 4px; 
+            min-height: 20px;
+            outline: none;
+        }
+        [contenteditable="true"]:hover { 
+            border-color: #007bff; 
+            background-color: #f0f8ff; 
+        }
+        [contenteditable="true"]:focus { 
+            border-color: #007bff; 
+            background-color: #e7f3ff; 
+        }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+        .bg-green { background: #d4edda; color: #155724; }
+        .bg-red { background: #f8d7da; color: #721c24; }
+        details { margin-top: 5px; cursor: pointer; font-size: 0.9rem; }
+        summary { font-weight: 600; color: #007bff; outline: none; }
+        .history-table { width: 100%; margin-top: 10px; font-size: 0.85rem; border: 1px solid #ddd; }
+        .history-table th { background: #eee; color: #333; }
+        .btn-wa { background-color: #25D366; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; font-size: 0.85rem; border: none; cursor: pointer; }
+        .btn-wa:hover { background-color: #1ebc57; }
+        .btn-wa.disabled { background-color: #ccc; cursor: not-allowed; pointer-events: none; }
+        .filters { margin-bottom: 15px; display: flex; gap: 10px; }
+        .search-box { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 250px; }
+        .btn { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-small { padding: 4px 8px; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="upload-area">
+        <div>
+            <strong>Importar Dados (XLSX)</strong><br>
+            <small>Abas: IRMAOS e PAGAMENTOS</small>
+        </div>
+        <input type="file" id="fileInput" accept=".xlsx" style="padding:8px; border:1px solid #ddd; border-radius:4px">
+        <button id="btnBackup" class="btn btn-success">💾 Backup JSON</button>
+        <input type="file" id="jsonInput" accept=".json" style="display:none">
+        <button id="btnRestore" class="btn">📥 Restaurar Backup</button>
+        <button id="btnLoadFileJson" class="btn" style="background:#17a2b8">📄 Carregar file.json</button>
+        <button id="btnReloadFileJson" class="btn" style="background:#ffc107; color:#000">🔄 Recarregar file.json</button>
+        <button id="btnSyncConfirmacoes" class="btn" style="background:#20c997">🔄 Sincronizar Confirmações</button>
+        <button id="btnCopyData" class="btn" style="background:#6c757d">📋 Copiar Dados</button>
+        <button id="btnLogout" class="btn" style="background:#dc3545">🚪 Sair</button>
+        <div id="lastUpdate" style="margin-left: auto; font-size: 0.8rem; color: #666;"></div>
+    </div>
+    <div class="filters">
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por nome ou CPF...">
+        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" id="filterOpenOnly"> Apenas com pendências
+        </label>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <label style="font-weight: bold;">Filtrar por letra:</label>
+            <select id="filterAlphabet" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                <option value="">Todas</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+                <option value="G">G</option>
+                <option value="H">H</option>
+                <option value="I">I</option>
+                <option value="J">J</option>
+                <option value="K">K</option>
+                <option value="L">L</option>
+                <option value="M">M</option>
+                <option value="N">N</option>
+                <option value="O">O</option>
+                <option value="P">P</option>
+                <option value="Q">Q</option>
+                <option value="R">R</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="U">U</option>
+                <option value="V">V</option>
+                <option value="W">W</option>
+                <option value="X">X</option>
+                <option value="Y">Y</option>
+                <option value="Z">Z</option>
+            </select>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome / CPF / WhatsApp (Clique para editar)</th>
+                <th>Status (Mês Atual)</th>
+                <th>Meses em Aberto</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <script src="xlsx.full.min.js"></script>
+    <script src="messages.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Gestão Azzil - JSON V2",
+  "version": "2.0",
+  "permissions": ["storage"],
+  "action": { "default_popup": "dashboard.html" },
+  "web_accessible_resources": [
+    {
+      "resources": ["file.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

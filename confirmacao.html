@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Confirmação de Pagamento - Gestão de Mensalidades">
+    <title>Confirmar Pagamento</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 100%;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        @media (min-width: 768px) {
+            .chat-container {
+                max-width: 600px;
+                max-height: 90vh;
+            }
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .chat-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 767px) {
+            .chat-header h1 {
+                font-size: 32px;
+            }
+            .chat-header p {
+                font-size: 18px;
+            }
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-bot {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .message-user {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 767px) {
+            .message-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+        }
+        
+        .message-bot .message-avatar {
+            background: #667eea;
+            color: white;
+        }
+        
+        .message-user .message-avatar {
+            background: #25D366;
+            color: white;
+        }
+        
+        .message-content {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 18px;
+            max-width: 85%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 767px) {
+            .message-content {
+                font-size: 20px;
+                padding: 18px 22px;
+                max-width: 90%;
+            }
+        }
+        
+        .message-bot .message-content {
+            border-top-left-radius: 4px;
+        }
+        
+        .message-user .message-content {
+            background: #DCF8C6;
+            border-top-right-radius: 4px;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 18px 24px;
+            border: 3px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 20px;
+            outline: none;
+            transition: border-color 0.3s;
+            min-height: 60px;
+        }
+        
+        @media (max-width: 767px) {
+            .input-group input {
+                font-size: 22px;
+                padding: 20px 24px;
+                min-height: 70px;
+            }
+        }
+        
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 25px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 15px;
+            min-height: 60px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            font-size: 22px;
+            padding: 20px 40px;
+            min-height: 70px;
+            font-weight: 700;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+            box-shadow: 0 7px 25px rgba(40, 167, 69, 0.6);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            font-size: 18px;
+        }
+        
+        .btn-small {
+            padding: 12px 24px;
+            font-size: 18px;
+            width: auto;
+            margin: 5px 5px 5px 0;
+            min-height: 50px;
+        }
+        
+        @media (max-width: 767px) {
+            .btn {
+                font-size: 22px;
+                padding: 20px 32px;
+                min-height: 70px;
+            }
+            
+            .btn-success {
+                font-size: 24px;
+                padding: 24px 40px;
+                min-height: 80px;
+            }
+        }
+        
+        .pendencia-item {
+            background: #fff3cd;
+            border-left: 6px solid #ffc107;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .pendencia-item.pago {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        @media (max-width: 767px) {
+            .pendencia-item {
+                padding: 24px;
+                font-size: 20px;
+                margin: 20px 0;
+            }
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status-pago {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-em-dia {
+            background: #d1ecf1;
+            color: #0c5460;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px 0;
+        }
+        
+        .comprovante-upload {
+            margin-top: 10px;
+            padding: 10px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .comprovante-upload input[type="file"] {
+            display: none;
+        }
+        
+        .comprovante-upload label {
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .comprovante-preview {
+            margin-top: 10px;
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>💬 Confirmação de Pagamento</h1>
+            <p>A∴R∴L∴S∴ - Sistema de Confirmação</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message message-bot">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <p>Olá! Para confirmar seus pagamentos, por favor informe seu CPF ou nome completo.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="padding: 20px; background: white; border-top: 1px solid #e0e0e0;">
+            <div id="searchSection">
+                <div class="input-group">
+                    <input type="text" id="searchInput" placeholder="Digite seu CPF ou nome completo..." autocomplete="off">
+                </div>
+                <button class="btn" id="btnSearch">🔍 Buscar</button>
+                <div id="loadingMessage" class="hidden loading">Carregando seus dados...</div>
+            </div>
+            
+            <div id="confirmSection" class="hidden">
+                <!-- Será preenchido dinamicamente -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="xlsx.full.min.js"></script>
+    <script src="confirmacao.js"></script>
+</body>
+</html>

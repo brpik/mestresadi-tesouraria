@@ -1,0 +1,11 @@
+*** Crie um Excel com 2 abas e cole estes dados ***
+
+ABA 1: IRMAOS
+nome,cpf,email,data_nascimento,whatsapp
+Gabriel,12345678900,gabriel@email.com,1990-01-01,65999999999
+Natália,11122233344,natalia@email.com,1995-05-05,65888888888
+
+ABA 2: PAGAMENTOS
+cpf,competencia,status,data_pagamento,obs
+12345678900,2026-01,PAGO,2026-01-10,Pix
+11122233344,2025-12,PAGO,2025-12-20,Dinheiro
