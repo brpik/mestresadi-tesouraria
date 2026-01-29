@@ -8,6 +8,29 @@ let db = {
     pagamentos: []
 };
 
+function getBaseUrl() {
+    const path = window.location.pathname;
+    const basePath = path.replace(/[^/]*$/, '');
+    if (window.location.origin && window.location.origin !== 'null') {
+        return window.location.origin + basePath;
+    }
+    return window.location.href.replace(/[^/]*$/, '');
+}
+
+function encodeCpfForUrl(cpf) {
+    const cpfLimpo = String(cpf || '').replace(/\D/g, '');
+    if (!cpfLimpo) return '';
+    return btoa(cpfLimpo).replace(/[+/=]/g, (m) => ({ '+': '-', '/': '_', '=': '' }[m]));
+}
+
+function getCpfCodificadoAtual() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cpfCodificado = urlParams.get('c');
+    if (cpfCodificado) return cpfCodificado;
+    if (currentIrmao && currentIrmao.cpf) return encodeCpfForUrl(currentIrmao.cpf);
+    return '';
+}
+
 // Decodifica CPF da URL (encurtado)
 function decodeCpfFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -87,9 +110,13 @@ function loadData() {
             // Verifica se há CPF na URL e busca automaticamente
             const cpfDaUrl = decodeCpfFromUrl();
             if (cpfDaUrl) {
+                // Não mostra mensagem inicial se já tem CPF na URL
                 setTimeout(() => {
                     buscarPorCpf(cpfDaUrl);
                 }, 500); // Aguarda um pouco para garantir que tudo está carregado
+            } else {
+                // Mostra mensagem inicial apenas se não houver CPF na URL
+                addBotMessage('<p style="font-size: 20px; line-height: 1.8;">Olá! 👋<br><br>Para confirmar seus pagamentos, por favor informe seu <strong>CPF</strong> ou <strong>nome completo</strong> no campo abaixo.</p>');
             }
         } catch (e) {
             console.error('Erro ao parsear JSON:', e);
@@ -102,29 +129,46 @@ function loadData() {
     });
 }
 
-function addBotMessage(text) {
+function addBotMessage(text, html = null) {
     const messagesDiv = document.getElementById('chatMessages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message message-bot';
-    messageDiv.innerHTML = `
-        <div class="message-avatar">🤖</div>
-        <div class="message-content">${text}</div>
-    `;
+    messageDiv.className = 'list-message';
+    messageDiv.innerHTML = html ? html : text;
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    updateScrollIndicator();
 }
 
 function addUserMessage(text) {
     const messagesDiv = document.getElementById('chatMessages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message message-user';
-    messageDiv.innerHTML = `
-        <div class="message-avatar">👤</div>
-        <div class="message-content">${text}</div>
-    `;
+    messageDiv.className = 'list-message info';
+    messageDiv.textContent = text;
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    updateScrollIndicator();
 }
+
+function updateScrollIndicator() {
+    const messagesDiv = document.getElementById('chatMessages');
+    const indicator = document.getElementById('scrollIndicator');
+    if (!messagesDiv || !indicator) return;
+    const needsScroll = messagesDiv.scrollHeight - messagesDiv.scrollTop > messagesDiv.clientHeight + 12;
+    if (needsScroll) {
+        indicator.classList.add('show');
+    } else {
+        indicator.classList.remove('show');
+    }
+}
+
+// Atualiza indicador durante a rolagem
+document.addEventListener('DOMContentLoaded', () => {
+    const messagesDiv = document.getElementById('chatMessages');
+    if (messagesDiv) {
+        messagesDiv.addEventListener('scroll', updateScrollIndicator);
+    }
+    updateScrollIndicator();
+});
 
 function searchIrmao() {
     const searchValue = document.getElementById('searchInput').value.trim();
@@ -204,12 +248,6 @@ function showPendencias() {
     if (mesesSemPagamento.length === 0) {
         addBotMessage(`✅ <strong>${currentIrmao.nome}</strong>, você está em dia! Todos os pagamentos foram confirmados.`);
         document.getElementById('searchSection').classList.add('hidden');
-        document.getElementById('confirmSection').innerHTML = `
-            <div class="status-em-dia">
-                ✅ Você está em dia! Todos os pagamentos foram confirmados.
-            </div>
-        `;
-        document.getElementById('confirmSection').classList.remove('hidden');
         return;
     }
     
@@ -243,11 +281,8 @@ function showPendencias() {
     // Mostra interface de confirmação
     document.getElementById('searchSection').classList.add('hidden');
     
-    let html = `
-        <div style="margin-bottom: 15px;">
-            <strong>Meses em Aberto:</strong>
-        </div>
-    `;
+    addBotMessage('📌 <strong>Meses em Aberto:</strong>');
+    let html = '';
     
         mesesComValores.forEach(({ competencia, valor }) => {
             const compFormatado = formatCompetencia(competencia);
@@ -255,18 +290,16 @@ function showPendencias() {
             const comprovanteId = `comprovante_${competencia}`;
             
             html += `
-            <div class="pendencia-item" id="pendencia_${competencia}" style="margin-bottom: 25px;">
-                <div style="margin-bottom: 20px;">
-                    <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #333;">
-                        📅 Mês: ${compFormatado}
-                    </div>
-                    ${valor > 0 ? `<div style="font-size: 22px; color: #856404; font-weight: bold; margin-bottom: 15px;">💵 Valor: R$ ${valorFormatado}</div>` : ''}
+            <div class="pendencia-item" id="pendencia_${competencia}">
+                <div class="pendencia-header">
+                    <div class="pendencia-title">📅 Mês: ${compFormatado}</div>
+                    ${valor > 0 ? `<div class="pendencia-value">💵 Valor: R$ ${valorFormatado}</div>` : ''}
                 </div>
-                <button class="btn btn-success" id="btn_${competencia}" data-competencia="${competencia}" style="width: 100%; margin-bottom: 15px;">
+                <button class="btn btn-success btn-confirmar" id="btn_${competencia}" data-competencia="${competencia}">
                     ✅ CONFIRMAR PAGAMENTO DESTE MÊS
                 </button>
-                <div class="comprovante-upload" id="upload_${competencia}" style="margin-top: 15px;">
-                    <label for="${comprovanteId}" style="cursor: pointer; color: #667eea; font-weight: 600; font-size: 18px; display: block; padding: 15px; border: 2px dashed #667eea; border-radius: 12px; text-align: center;">
+                <div class="comprovante-upload" id="upload_${competencia}">
+                    <label for="${comprovanteId}" class="upload-label-sm">
                         📎 Enviar Comprovante (opcional)
                     </label>
                     <input type="file" id="${comprovanteId}" accept="image/*,.pdf" data-competencia="${competencia}" style="display: none;">
@@ -277,13 +310,12 @@ function showPendencias() {
         });
     
     html += `
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+        <div class="confirm-footer">
             <button class="btn btn-danger" onclick="cancelar()">❌ Cancelar</button>
         </div>
     `;
     
-    document.getElementById('confirmSection').innerHTML = html;
-    document.getElementById('confirmSection').classList.remove('hidden');
+    addBotMessage(null, `<div>${html}</div>`);
     
     // Adiciona event listeners para os botões de confirmação (usando event delegation)
     setTimeout(() => {
@@ -308,6 +340,7 @@ function showPendencias() {
                     handleComprovante(competencia, e.target.files[0]);
                 });
             }
+            
         });
         console.log('✅ Event listeners adicionados para', mesesComValores.length, 'botões');
     }, 100);
@@ -324,19 +357,93 @@ function handleComprovante(competencia, file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             previewDiv.innerHTML = `
-                <img src="${e.target.result}" class="comprovante-preview" style="max-width: 200px; margin-top: 10px;">
-                <div style="margin-top: 5px; font-size: 12px; color: #666;">${file.name}</div>
+                <img src="${e.target.result}" class="comprovante-preview">
+                <div class="preview-file">${file.name}</div>
+                <div>
+                    <button onclick="uploadComprovante('${competencia}')" class="btn btn-small" style="margin-top: 6px;">
+                        📤 Enviar Comprovante
+                    </button>
+                </div>
             `;
         };
         reader.readAsDataURL(file);
     } else {
         previewDiv.innerHTML = `
-            <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 8px;">
-                📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)
+            <div class="preview-file">📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)</div>
+            <div>
+                <button onclick="uploadComprovante('${competencia}')" class="btn btn-small" style="margin-top: 6px;">
+                    📤 Enviar Comprovante
+                </button>
             </div>
         `;
     }
 }
+
+async function uploadComprovante(competencia) {
+    if (!comprovantes[competencia] || !currentIrmao) {
+        alert('Erro: comprovante não encontrado.');
+        return;
+    }
+    
+    const file = comprovantes[competencia];
+    const formData = new FormData();
+    formData.append('comprovante', file);
+    formData.append('id_irmao', currentIrmao.id);
+    formData.append('competencia', competencia);
+    formData.append('cpf', currentIrmao.cpf);
+    
+    const previewDiv = document.getElementById(`preview_${competencia}`);
+    previewDiv.innerHTML = '<div style="padding: 10px; color: #856404;">⏳ Enviando comprovante...</div>';
+    
+    try {
+        const response = await fetch('/api/upload-comprovante', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Salva referência do comprovante no pagamento para exibir no dashboard
+            let pagamento = db.pagamentos.find(p => p.id_irmao === currentIrmao.id && p.competencia === competencia);
+            if (!pagamento) {
+                pagamento = {
+                    id_irmao: currentIrmao.id,
+                    competencia: competencia,
+                    status: 'EM_ABERTO',
+                    data_pagamento: '',
+                    obs: '',
+                    valor: 0
+                };
+                db.pagamentos.push(pagamento);
+            }
+            pagamento.comprovante = result.url || `/comprovantes/${currentIrmao.id}_${competencia}`;
+            // Salva sem mensagem de confirmação (não é pagamento)
+            saveData();
+
+            previewDiv.innerHTML = `
+                <div style="margin-top: 10px; padding: 15px; background: #d4edda; border-radius: 8px; border: 2px solid #28a745;">
+                    <div style="font-weight: bold; color: #155724;">✅ Comprovante enviado com sucesso!</div>
+                    <div style="color: #155724; margin-top: 5px;">📄 ${file.name}</div>
+                </div>
+            `;
+            addBotMessage(`✅ Comprovante do mês <strong>${formatCompetencia(competencia)}</strong> enviado com sucesso!`);
+        } else {
+            throw new Error(result.error || 'Erro ao enviar comprovante');
+        }
+    } catch (error) {
+        console.error('Erro ao enviar comprovante:', error);
+        previewDiv.innerHTML = `
+            <div style="margin-top: 10px; padding: 15px; background: #f8d7da; border-radius: 8px; border: 2px solid #dc3545;">
+                <div style="font-weight: bold; color: #721c24;">❌ Erro ao enviar comprovante</div>
+                <div style="color: #721c24; margin-top: 5px;">${error.message}</div>
+            </div>
+        `;
+    }
+}
+
+// Expor função globalmente
+window.uploadComprovante = uploadComprovante;
 
 function confirmarPagamento(competencia) {
     console.log('🔵 confirmarPagamento chamado com competencia:', competencia);
@@ -362,6 +469,12 @@ function confirmarPagamento(competencia) {
             btn.disabled = true;
             btn.innerHTML = '⏳ Processando...';
             btn.style.opacity = '0.7';
+        }
+
+        // Remove o botão de cancelar após confirmação
+        const cancelFooter = document.querySelector('.confirm-footer');
+        if (cancelFooter) {
+            cancelFooter.remove();
         }
         
         console.log('🔵 Buscando pagamento existente...');
@@ -454,12 +567,7 @@ function confirmarPagamento(competencia) {
             
             if (aindaPendentes.length === 0) {
                 addBotMessage(`🎉 Parabéns! Todos os seus pagamentos foram confirmados. Você está em dia!`);
-                document.getElementById('confirmSection').innerHTML = `
-                    <div class="status-em-dia">
-                        ✅ Você está em dia! Todos os pagamentos foram confirmados.
-                    </div>
-                    <button class="btn" onclick="location.reload()" style="margin-top: 20px;">🔄 Nova Consulta</button>
-                `;
+                addBotMessage(null, `<div class="status-em-dia">✅ Você está em dia! Todos os pagamentos foram confirmados.</div><button class="btn" onclick="location.reload()" style="margin-top: 10px;">🔄 Nova Consulta</button>`);
             }
         }, 500);
         

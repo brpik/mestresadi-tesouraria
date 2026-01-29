@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boletos em Aberto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .boleto-item {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .boleto-info {
+            flex: 1;
+        }
+        
+        .boleto-mes {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .boleto-valor {
+            font-size: 18px;
+            color: #856404;
+            font-weight: bold;
+        }
+        
+        .btn-download {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        
+        .btn-download:hover {
+            background: #218838;
+        }
+        
+        .no-boletos {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        @media (max-width: 767px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .boleto-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .btn-download {
+                width: 100%;
+                margin-top: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Boletos</h1>
+        <div class="info">
+            <strong>Olá!</strong> Aqui você pode baixar boletos em aberto e ver os boletos já pagos.
+        </div>
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="#abertos" class="btn-download" style="background:#667eea; text-align:center; text-decoration:none;">Boletos em Aberto</a>
+            <a href="#pagos" class="btn-download" style="background:#6c757d; text-align:center; text-decoration:none;">Boletos Pagos</a>
+        </div>
+        <div id="boletosAbertos"></div>
+        <div id="boletosPagos" style="margin-top: 25px;"></div>
+    </div>
+    
+    <script>
+        // Decodifica CPF da URL
+        function decodeCpfFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cpfCodificado = urlParams.get('c');
+            
+            if (cpfCodificado) {
+                try {
+                    const cpfBase64 = cpfCodificado.replace(/[-_]/g, (m) => {
+                        return {'-': '+', '_': '/'}[m];
+                    });
+                    const padding = (4 - cpfBase64.length % 4) % 4;
+                    const cpfBase64Padded = cpfBase64 + '='.repeat(padding);
+                    return atob(cpfBase64Padded);
+                } catch (e) {
+                    console.error('Erro ao decodificar CPF:', e);
+                    return null;
+                }
+            }
+            return null;
+        }
+        
+        function formatCurrency(valor) {
+            if (!valor) return '';
+            return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
+        }
+        
+        function resolveBoletoUrl(pagamento, irmao) {
+            if (pagamento && pagamento.boleto) return pagamento.boleto;
+            return `/boletos/${irmao.id}_${pagamento.competencia}.pdf`;
+        }
+        
+        async function loadBoletos() {
+            const cpf = decodeCpfFromUrl();
+            const boletosAbertos = document.getElementById('boletosAbertos');
+            const boletosPagos = document.getElementById('boletosPagos');
+            
+            if (!cpf) {
+                const msg = '<div class="no-boletos">CPF não encontrado na URL. Acesse através do link enviado por WhatsApp.</div>';
+                boletosAbertos.innerHTML = msg;
+                boletosPagos.innerHTML = '';
+                return;
+            }
+            
+            boletosAbertos.innerHTML = '<div class="loading">Carregando boletos...</div>';
+            boletosPagos.innerHTML = '';
+            
+            try {
+                // Carrega dados do file.json
+                const response = await fetch('file.json?' + new Date().getTime());
+                const data = await response.json();
+                
+                // Busca irmão pelo CPF
+                const irmao = data.irmaos.find(i => {
+                    const cpfIrmao = (i.cpf || '').replace(/\D/g, '');
+                    return cpfIrmao === cpf.replace(/\D/g, '');
+                });
+                
+                if (!irmao) {
+                    boletosAbertos.innerHTML = '<div class="no-boletos">Dados não encontrados.</div>';
+                    boletosPagos.innerHTML = '';
+                    return;
+                }
+                
+                // Busca pagamentos em aberto e pagos
+                const pagamentosEmAberto = data.pagamentos.filter(p => 
+                    p.id_irmao === irmao.id && 
+                    !['PAGO', 'ISENTO', 'ACORDO'].includes(p.status)
+                );
+                
+                const pagamentosPagos = data.pagamentos.filter(p => 
+                    p.id_irmao === irmao.id && 
+                    String(p.status || '').toUpperCase() === 'PAGO'
+                );
+                
+                let htmlAbertos = '';
+                let temAbertos = false;
+                
+                for (const pag of pagamentosEmAberto) {
+                    const competencia = pag.competencia;
+                    const mesFormatado = formatCompetencia(competencia);
+                    const valor = pag.valor || 0;
+                    const boletoUrl = resolveBoletoUrl(pag, irmao);
+                    
+                    let disponivel = false;
+                    try {
+                        const checkResponse = await fetch(boletoUrl, { method: 'HEAD' });
+                        disponivel = checkResponse.ok;
+                    } catch (e) {
+                        disponivel = false;
+                    }
+                    
+                    temAbertos = true;
+                    htmlAbertos += `
+                        <div class="boleto-item" id="abertos">
+                            <div class="boleto-info">
+                                <div class="boleto-mes">📅 ${mesFormatado}</div>
+                                ${valor > 0 ? `<div class="boleto-valor">💵 ${formatCurrency(valor)}</div>` : ''}
+                                ${disponivel ? '' : '<div class="boleto-valor" style="color:#dc3545;">Boleto indisponível</div>'}
+                            </div>
+                            ${disponivel
+                                ? `<a href="${boletoUrl}" download class="btn-download">📥 Baixar Boleto</a>`
+                                : `<span class="btn-download" style="background:#ccc; cursor:not-allowed;">Indisponível</span>`
+                            }
+                        </div>
+                    `;
+                }
+                
+                if (!temAbertos) {
+                    boletosAbertos.innerHTML = '<div class="no-boletos" id="abertos">✅ Você está em dia! Não há boletos em aberto.</div>';
+                } else {
+                    boletosAbertos.innerHTML = `<h2 style="margin-bottom:10px;">📌 Boletos em Aberto</h2>` + htmlAbertos;
+                }
+                
+                let htmlPagos = '';
+                let temPagos = false;
+                
+                for (const pag of pagamentosPagos) {
+                    const competencia = pag.competencia;
+                    const mesFormatado = formatCompetencia(competencia);
+                    const valor = pag.valor || 0;
+                    const boletoUrl = resolveBoletoUrl(pag, irmao);
+                    
+                    let disponivel = false;
+                    try {
+                        const checkResponse = await fetch(boletoUrl, { method: 'HEAD' });
+                        disponivel = checkResponse.ok;
+                    } catch (e) {
+                        disponivel = false;
+                    }
+                    
+                    temPagos = true;
+                    htmlPagos += `
+                        <div class="boleto-item" id="pagos">
+                            <div class="boleto-info">
+                                <div class="boleto-mes">✅ ${mesFormatado}</div>
+                                ${valor > 0 ? `<div class="boleto-valor">💵 ${formatCurrency(valor)}</div>` : ''}
+                                ${disponivel ? '' : '<div class="boleto-valor" style="color:#dc3545;">Boleto indisponível</div>'}
+                            </div>
+                            ${disponivel
+                                ? `<a href="${boletoUrl}" download class="btn-download" style="background:#6c757d;">📥 Baixar Boleto Pago</a>`
+                                : `<span class="btn-download" style="background:#ccc; cursor:not-allowed;">Indisponível</span>`
+                            }
+                        </div>
+                    `;
+                }
+                
+                if (!temPagos) {
+                    boletosPagos.innerHTML = '<div class="no-boletos" id="pagos">Não há boletos pagos disponíveis.</div>';
+                } else {
+                    boletosPagos.innerHTML = `<h2 style="margin-bottom:10px;">📑 Boletos Pagos (Extrato)</h2>` + htmlPagos;
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar boletos:', error);
+                boletosAbertos.innerHTML = '<div class="no-boletos">Erro ao carregar boletos. Por favor, tente novamente mais tarde.</div>';
+            }
+        }
+        
+        function formatCompetencia(comp) {
+            if (!comp || comp.length !== 7) return comp;
+            const [year, month] = comp.split('-');
+            return `${month}/${year}`;
+        }
+        
+        // Carrega boletos ao iniciar
+        loadBoletos();
+    </script>
+</body>
+</html>

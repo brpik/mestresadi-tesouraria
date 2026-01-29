@@ -6,6 +6,7 @@ let db = {
 
 // Mapa CPF -> ID para facilitar conversão
 let cpfToIdMap = {};
+let serverAvailable = null;
 
 // --- ABSTRAÇÃO DE STORAGE (funciona como extensão ou localmente) ---
 const Storage = {
@@ -182,8 +183,52 @@ const FileLoader = {
     }
 };
 
+// Detecta se o servidor com endpoint de salvamento está disponível
+async function detectServerAvailability() {
+    // Se estiver em file://, não há servidor
+    if (FileLoader.isFileProtocol()) {
+        serverAvailable = false;
+        console.warn('⚠️ Protocolo file:// detectado. Servidor indisponível.');
+        updateServerStatusIndicator();
+        return serverAvailable;
+    }
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1500);
+    
+    try {
+        const response = await fetch('/api/save-file.json', {
+            method: 'OPTIONS',
+            cache: 'no-store',
+            signal: controller.signal
+        });
+        serverAvailable = response.ok;
+    } catch (error) {
+        serverAvailable = false;
+    } finally {
+        clearTimeout(timeout);
+    }
+    
+    console.log(`🌐 Servidor ${serverAvailable ? 'disponível' : 'indisponível'} para salvamento`);
+    updateServerStatusIndicator();
+    return serverAvailable;
+}
+
+function updateServerStatusIndicator() {
+    const lastUpdateEl = document.getElementById('lastUpdate');
+    if (!lastUpdateEl) return;
+    
+    if (serverAvailable === true) {
+        lastUpdateEl.innerHTML = '🟢 Servidor OK';
+        lastUpdateEl.style.color = '#28a745';
+    } else if (serverAvailable === false) {
+        lastUpdateEl.innerHTML = '🟠 Sem servidor (usando storage)';
+        lastUpdateEl.style.color = '#ff8c00';
+    }
+}
+
 // Aguarda carregamento completo
-function init() {
+async function init() {
     // Verifica se XLSX está disponível (pode levar um tempo para carregar)
     if (typeof XLSX === 'undefined') {
         console.warn('XLSX ainda não está carregado, tentando novamente...');
@@ -195,6 +240,7 @@ function init() {
     
     // Inicializa event listeners
     initEventListeners();
+    await detectServerAvailability();
     loadDB();
 }
 
@@ -261,17 +307,38 @@ function initEventListeners() {
 // --- CORE: Carregar e Salvar ---
 
 function loadDB() {
-    // SEMPRE tenta carregar file.json primeiro (ignora storage se file.json existir)
-    console.log('🔄 Carregando file.json...');
+    console.log('🔄 Carregando dados...');
     
-    // Se estiver rodando via file://, mostra mensagem e carrega do storage
+    // Se estiver rodando via file://, carrega do storage
     if (FileLoader.isFileProtocol()) {
-        console.warn('⚠️ Detectado protocolo file://. Para carregar file.json automaticamente, use um servidor HTTP local.');
-        console.log('💡 Dica: Execute "python3 server.py" ou "python3 -m http.server 8000"');
-        console.log('📋 Carregando dados do storage...');
+        console.warn('⚠️ Detectado protocolo file://. Carregando dados do storage...');
         loadFromStorage();
         return;
     }
+    
+    // Se não há servidor, prioriza storage para não sobrescrever alterações locais
+    if (serverAvailable === false) {
+        console.warn('⚠️ Servidor indisponível. Usando storage como fonte principal.');
+        Storage.load('db_azzil', (data) => {
+            if (data && data.irmaos && data.pagamentos) {
+                db = data;
+                rebuildCpfMap();
+                console.log(`✅ Dados carregados do storage: ${db.irmaos.length} irmãos, ${db.pagamentos.length} pagamentos`);
+                renderTable();
+            } else {
+                console.warn('⚠️ Storage vazio. Tentando carregar file.json...');
+                loadFromFileJson();
+            }
+        });
+        return;
+    }
+    
+    // Se há servidor, carrega file.json normalmente
+    loadFromFileJson();
+}
+
+function loadFromFileJson() {
+    console.log('🔄 Carregando file.json...');
     
     // Adiciona timestamp para evitar cache do navegador
     const timestamp = new Date().getTime();
@@ -287,7 +354,6 @@ function loadDB() {
                 pagamentosRaw: json.pagamentos ? JSON.stringify(json.pagamentos).substring(0, 200) : 'null'
             });
             
-            // Aceita se tiver irmaos E pagamentos (mesmo que pagamentos seja array vazio)
             if (json.irmaos && Array.isArray(json.irmaos) && json.pagamentos !== undefined && Array.isArray(json.pagamentos)) {
                 // Garante que o campo 'ativo' existe para todos os irmãos (padrão true)
                 json.irmaos.forEach(irmao => {
@@ -318,13 +384,12 @@ function loadDB() {
                 
                 rebuildCpfMap();
                 
-                // Salva no storage apenas como backup (mas sempre usa file.json como fonte principal)
+                // Salva no storage apenas como backup
                 saveDB();
                 
                 renderTable();
                 console.log(`✅ file.json carregado e sincronizado: ${db.irmaos.length} irmãos e ${db.pagamentos.length} pagamentos.`);
                 
-                // Atualiza indicador de última atualização
                 lastSaveTime = new Date();
                 updateLastSaveIndicator();
             } else {
@@ -400,18 +465,97 @@ function tryLoadFileJsonAuto() {
 let saveTimeout = null;
 let lastSaveTime = null;
 
-function saveDB(showFeedback = false) {
+// Função para fazer download do file.json atualizado (quando não há servidor)
+function downloadFileJson() {
+    try {
+        const jsonStr = JSON.stringify(db, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.href = url;
+        downloadAnchorNode.download = 'file.json';
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        URL.revokeObjectURL(url);
+        console.log('📥 file.json baixado automaticamente');
+    } catch (error) {
+        console.error('❌ Erro ao fazer download do file.json:', error);
+    }
+}
+
+// Função para sincronizar com o servidor (file.json)
+async function syncToServer() {
+    try {
+        // Verifica se há pagamentos antes de sincronizar
+        const pagamentosComValor = db.pagamentos.filter(p => p.valor && p.valor > 0);
+        console.log('🔄 Sincronizando com servidor:', {
+            totalPagamentos: db.pagamentos.length,
+            pagamentosComValor: pagamentosComValor.length,
+            exemplo: pagamentosComValor[0]
+        });
+        
+        const response = await fetch('/api/save-file.json', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(db)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Dados sincronizados com servidor:', {
+                ...result,
+                pagamentosComValorEnviados: pagamentosComValor.length
+            });
+            
+            // Verifica se os dados foram salvos corretamente
+            if (result.pagamentos !== undefined) {
+                console.log('✅ Servidor confirmou salvamento de', result.pagamentos, 'pagamentos');
+            }
+            
+            return true;
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Erro ao sincronizar com servidor:', response.status, errorText);
+            // Se não há servidor, faz download do file.json
+            console.log('💡 Servidor não disponível. Fazendo download do file.json atualizado...');
+            downloadFileJson();
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Erro de rede ao sincronizar:', error);
+        // Se não há servidor, faz download do file.json
+        console.log('💡 Servidor não disponível. Fazendo download do file.json atualizado...');
+        downloadFileJson();
+        return false;
+    }
+}
+
+function saveDB(showFeedback = false, syncServer = false) {
     // Cancela salvamento anterior se ainda não executou
     if (saveTimeout) {
         clearTimeout(saveTimeout);
     }
     
     // Debounce: salva após 300ms de inatividade
-    saveTimeout = setTimeout(() => {
+    saveTimeout = setTimeout(async () => {
         try {
+            // Salva no localStorage primeiro
             Storage.save('db_azzil', db);
             rebuildCpfMap();
             lastSaveTime = new Date();
+            
+            // Sincroniza com servidor se solicitado
+            if (syncServer) {
+                if (serverAvailable === false) {
+                    console.log('💡 Servidor indisponível. Fazendo download do file.json atualizado...');
+                    downloadFileJson();
+                } else {
+                    await syncToServer();
+                }
+            }
             
             // Atualiza indicador de última atualização
             updateLastSaveIndicator();
@@ -420,7 +564,7 @@ function saveDB(showFeedback = false) {
                 showSaveFeedback();
             }
             
-            console.log('✅ Dados salvos com sucesso');
+            console.log('✅ Dados salvos com sucesso' + (syncServer ? ' e sincronizados' : ''));
         } catch (error) {
             console.error('❌ Erro ao salvar dados:', error);
             showSaveError();
@@ -429,22 +573,34 @@ function saveDB(showFeedback = false) {
 }
 
 // Salva imediatamente sem debounce (para ações críticas)
-function saveDBImmediate(showFeedback = false) {
+async function saveDBImmediate(showFeedback = false, syncServer = false) {
     if (saveTimeout) {
         clearTimeout(saveTimeout);
     }
     
     try {
+        // Salva no localStorage primeiro
         Storage.save('db_azzil', db);
         rebuildCpfMap();
         lastSaveTime = new Date();
+        
+        // Sincroniza com servidor se solicitado
+        if (syncServer) {
+            if (serverAvailable === false) {
+                console.log('💡 Servidor indisponível. Fazendo download do file.json atualizado...');
+                downloadFileJson();
+            } else {
+                await syncToServer();
+            }
+        }
+        
         updateLastSaveIndicator();
         
         if (showFeedback) {
             showSaveFeedback();
         }
         
-        console.log('✅ Dados salvos imediatamente');
+        console.log('✅ Dados salvos imediatamente' + (syncServer ? ' e sincronizados' : ''));
     } catch (error) {
         console.error('❌ Erro ao salvar dados:', error);
         showSaveError();
@@ -685,7 +841,35 @@ function handleDynamicChange(event) {
     
     // Status select
     if (target.classList.contains('select-status') && target.dataset.irmaoId && target.dataset.competencia) {
-        updatePagamento(parseInt(target.dataset.irmaoId), target.dataset.competencia, 'status', target.value);
+        const statusValue = target.value;
+        const idIrmao = parseInt(target.dataset.irmaoId);
+        const competencia = target.dataset.competencia;
+        
+        // CRÍTICO: Busca o pagamento ANTES de atualizar para preservar o valor
+        const pagamentoAtual = db.pagamentos.find(p => p.id_irmao === idIrmao && p.competencia === competencia);
+        const valorAtual = pagamentoAtual ? (pagamentoAtual.valor || 0) : 0;
+        
+        console.log('🔵 Status alterado no select:', {
+            idIrmao,
+            competencia,
+            novoStatus: statusValue,
+            statusAntigo: pagamentoAtual?.status || 'não definido',
+            valorAtual: valorAtual,
+            pagamentoCompleto: pagamentoAtual
+        });
+        
+        // Atualiza preservando o valor
+        updatePagamento(idIrmao, competencia, 'status', statusValue);
+        return;
+    }
+
+    // Upload de boleto (dashboard)
+    if (target.classList.contains('input-boleto') && target.dataset.irmaoId && target.dataset.competencia) {
+        const file = target.files && target.files[0];
+        if (!file) return;
+        uploadBoletoFromDashboard(parseInt(target.dataset.irmaoId), target.dataset.competencia, file);
+        // limpa o input para permitir reenvio do mesmo arquivo
+        target.value = '';
         return;
     }
 }
@@ -755,6 +939,26 @@ function handleDynamicBlur(event) {
 }
 
 // --- FUNÇÕES AUXILIARES DE FORMATAÇÃO ---
+
+// Retorna HTML do comprovante sem gerar chamadas 404 em massa
+function getComprovanteHtml(pagamento) {
+    const comprovanteUrl = pagamento?.comprovante;
+    if (!comprovanteUrl) {
+        return '<span style="color:#ccc;">-</span>';
+    }
+    const lower = comprovanteUrl.toLowerCase();
+    const isImage = lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.gif');
+    const icon = isImage ? '📷' : '📄';
+    return `<a href="${comprovanteUrl}" target="_blank" style="text-decoration:none; color:#28a745; font-size:1.2em;" title="Ver comprovante">${icon}</a>`;
+}
+
+function getBoletoHtml(pagamento) {
+    const boletoUrl = pagamento?.boleto;
+    if (!boletoUrl) {
+        return '<span style="color:#ccc;">-</span>';
+    }
+    return `<a href="${boletoUrl}" target="_blank" style="text-decoration:none; color:#28a745; font-size:1.2em;" title="Ver boleto">📄</a>`;
+}
 
 // Formata data para exibição (DD/MM/YYYY)
 function formatDateForDisplay(dateString) {
@@ -1022,26 +1226,45 @@ function renderTable() {
                         <th>Valor</th>
                         <th>Data Pag.</th>
                         <th>Obs</th>
+                        <th>Comprovante</th>
+                        <th>Boleto</th>
                         <th>Ações</th>
                     </tr>
                     ${historico.map(p => {
                         // Formata a data antes de inserir no HTML
                         const dataFormatada = formatDateForDisplay(p.data_pagamento || '');
                         const valorFormatado = formatCurrency(p.valor || 0);
+                        
+                        const comprovanteHtml = getComprovanteHtml(p);
+                        const boletoHtml = getBoletoHtml(p);
+                        const boletoInputId = `boleto_dash_${irmao.id}_${p.competencia}`;
+                        
                         return `
                         <tr>
                             <td class="editable-pagamento-competencia" contenteditable="true" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}">${formatCompetencia(p.competencia)}</td>
                             <td>
-                                <select class="select-status" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}" style="padding:4px; border:1px solid #ddd; border-radius:4px">
-                                    <option value="EM_ABERTO" ${p.status === 'EM_ABERTO' ? 'selected' : ''}>EM_ABERTO</option>
-                                    <option value="PAGO" ${p.status === 'PAGO' ? 'selected' : ''}>PAGO</option>
-                                    <option value="ISENTO" ${p.status === 'ISENTO' ? 'selected' : ''}>ISENTO</option>
-                                    <option value="ACORDO" ${p.status === 'ACORDO' ? 'selected' : ''}>ACORDO</option>
+                                <select class="select-status" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}" data-status-antigo="${(p.status || 'EM_ABERTO').toUpperCase()}" style="padding:4px; border:1px solid #ddd; border-radius:4px">
+                                    <option value="EM_ABERTO" ${(p.status || '').toUpperCase() === 'EM_ABERTO' ? 'selected' : ''}>EM_ABERTO</option>
+                                    <option value="PAGO" ${(p.status || '').toUpperCase() === 'PAGO' ? 'selected' : ''}>PAGO</option>
+                                    <option value="ISENTO" ${(p.status || '').toUpperCase() === 'ISENTO' ? 'selected' : ''}>ISENTO</option>
+                                    <option value="ACORDO" ${(p.status || '').toUpperCase() === 'ACORDO' ? 'selected' : ''}>ACORDO</option>
                                 </select>
                             </td>
                             <td class="editable-pagamento-valor" contenteditable="true" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}" style="text-align:right; font-weight:bold;">R$ ${valorFormatado}</td>
                             <td class="editable-pagamento-data" contenteditable="true" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}">${dataFormatada}</td>
                             <td class="editable-pagamento-obs" contenteditable="true" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}">${p.obs || ''}</td>
+                            <td style="text-align:center;">
+                                ${comprovanteHtml}
+                            </td>
+                            <td style="text-align:center;">
+                                ${boletoHtml}
+                                <div style="margin-top:6px;">
+                                    <label for="${boletoInputId}" style="cursor:pointer; color:#28a745; font-weight:600; font-size:0.75rem; display:inline-block; padding:4px 8px; border:1px dashed #28a745; border-radius:6px;">
+                                        📄 Enviar
+                                    </label>
+                                    <input type="file" id="${boletoInputId}" class="input-boleto" accept=".pdf" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}" style="display:none;">
+                                </div>
+                            </td>
                             <td>
                                 <button class="btn btn-danger btn-small btn-delete-pagamento" data-irmao-id="${irmao.id}" data-competencia="${p.competencia}">🗑️</button>
                             </td>
@@ -1049,7 +1272,7 @@ function renderTable() {
                         `;
                     }).join('')}
                     <tr>
-                        <td colspan="6" style="text-align:center; padding:8px">
+                        <td colspan="7" style="text-align:center; padding:8px">
                             <button class="btn btn-success btn-add-pagamento" data-irmao-id="${irmao.id}" style="font-size:0.8rem">+ Adicionar Pagamento</button>
                         </td>
                     </tr>
@@ -1078,7 +1301,10 @@ function renderTable() {
                         return {'+': '-', '/': '_', '=': ''}[m];
                     });
                     const linkConfirmacao = `${baseUrl}confirmacao.html?c=${cpfCodificado}`;
-                    msg = Messages.whatsapp.message(irmao.nome, mesesComValores, totalPendencias, linkConfirmacao);
+                    // Gera link dos boletos (abertos e pagos)
+                    const linkBoletos = `${baseUrl}boletos.html?c=${cpfCodificado}#abertos`;
+                    const linkBoletosPagos = `${baseUrl}boletos.html?c=${cpfCodificado}#pagos`;
+                    msg = Messages.whatsapp.message(irmao.nome, mesesComValores, totalPendencias, linkConfirmacao, linkBoletos, linkBoletosPagos);
                 } else {
                     // Fallback para mensagem padrão - ordena por competência
                     const pendenciasFormatadas = pendenciasComValores
@@ -1125,6 +1351,8 @@ function renderTable() {
         `;
         tbody.appendChild(tr);
     });
+    
+    // Sem verificação automática de comprovantes para evitar 404 em massa
     
     // Remove informações anteriores se existirem
     const existingInfo = document.getElementById('resultados-info');
@@ -1214,37 +1442,10 @@ function calculateOpenMonths(idIrmao) {
 
 function toggleStatus(idIrmao, competencia) {
     const index = db.pagamentos.findIndex(p => p.id_irmao === idIrmao && p.competencia === competencia);
-
-    if (index >= 0) {
-        if (db.pagamentos[index].status === 'PAGO' || db.pagamentos[index].status === 'ISENTO') {
-            db.pagamentos[index].status = 'EM_ABERTO';
-        } else {
-            db.pagamentos[index].status = 'PAGO';
-            if (!db.pagamentos[index].data_pagamento) {
-                const today = new Date();
-                const day = String(today.getDate()).padStart(2, '0');
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const year = today.getFullYear();
-                // Salva como YYYY-MM-DD internamente
-                db.pagamentos[index].data_pagamento = `${year}-${month}-${day}`;
-            }
-        }
-    } else {
-        const today = new Date();
-        const day = String(today.getDate()).padStart(2, '0');
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const year = today.getFullYear();
-        db.pagamentos.push({
-            id_irmao: idIrmao,
-            competencia: competencia,
-            status: 'PAGO',
-            data_pagamento: `${year}-${month}-${day}`, // Salva como YYYY-MM-DD internamente
-            obs: '',
-            valor: 0
-        });
-    }
-    saveDB(true); // Salva com feedback visual
-    renderTable();
+    const statusAtual = index >= 0 ? (db.pagamentos[index].status || 'EM_ABERTO') : 'EM_ABERTO';
+    const novoStatus = (statusAtual === 'PAGO' || statusAtual === 'ISENTO') ? 'EM_ABERTO' : 'PAGO';
+    // Usa o fluxo central de update para garantir preservação e sincronização
+    updatePagamento(idIrmao, competencia, 'status', novoStatus);
 }
 
 function updateIrmao(id, field, value) {
@@ -1271,8 +1472,30 @@ function updateIrmao(id, field, value) {
 }
 
 function updatePagamento(idIrmao, competenciaAntiga, field, value) {
+    // SOLUÇÃO DEFINITIVA: Busca o pagamento ANTES de qualquer modificação e preserva TODOS os dados
     const index = db.pagamentos.findIndex(p => p.id_irmao === idIrmao && p.competencia === competenciaAntiga);
     
+    // CRÍTICO: Preserva TODOS os dados do pagamento ANTES de qualquer modificação
+    let dadosPreservados = null;
+    if (index >= 0) {
+        // Cria uma cópia profunda do pagamento atual
+        dadosPreservados = JSON.parse(JSON.stringify(db.pagamentos[index]));
+        console.log('📋 Dados preservados ANTES da atualização:', dadosPreservados);
+    } else {
+        // Se não existe, tenta buscar valor de outro pagamento similar (mesmo irmão, competência próxima)
+        const pagamentoSimilar = db.pagamentos.find(p => 
+            p.id_irmao === idIrmao && 
+            p.valor && p.valor > 0
+        );
+        if (pagamentoSimilar) {
+            dadosPreservados = { valor: pagamentoSimilar.valor };
+            console.log('📋 Valor encontrado de pagamento similar:', pagamentoSimilar.valor);
+        }
+    }
+    
+    const valorOriginal = dadosPreservados?.valor || 0;
+    
+    // Processa a atualização
     if (field === 'competencia') {
         // Converte MM/YYYY para YYYY-MM ao salvar
         const newCompetencia = parseCompetencia(value.trim());
@@ -1286,44 +1509,192 @@ function updatePagamento(idIrmao, competenciaAntiga, field, value) {
                     status: 'EM_ABERTO',
                     data_pagamento: '',
                     obs: '',
-                    valor: 0
+                    valor: valorOriginal
                 });
             }
         }
     } else if (index >= 0) {
-        // Converte DD/MM/YYYY para YYYY-MM-DD se for data_pagamento
+        // Pagamento existe - atualiza preservando TODOS os outros campos
+        const pagamento = db.pagamentos[index];
+        
+        // Preserva valores originais
+        const valorPreservado = dadosPreservados?.valor !== undefined && dadosPreservados?.valor !== null 
+            ? dadosPreservados.valor 
+            : (pagamento.valor !== undefined && pagamento.valor !== null ? pagamento.valor : 0);
+        const dataPreservada = dadosPreservados?.data_pagamento || pagamento.data_pagamento || '';
+        const obsPreservada = dadosPreservados?.obs || pagamento.obs || '';
+        const statusPreservado = dadosPreservados?.status || pagamento.status || 'EM_ABERTO';
+        
+        console.log('💾 Valores preservados:', {
+            valorPreservado,
+            dataPreservada,
+            obsPreservada,
+            statusPreservado,
+            valorOriginal
+        });
+        
+        // Atualiza apenas o campo solicitado
         if (field === 'data_pagamento') {
-            db.pagamentos[index][field] = parseDateForSave(value.trim());
+            pagamento.data_pagamento = parseDateForSave(value.trim());
         } else if (field === 'valor') {
-            // Converte valor para número
-            db.pagamentos[index][field] = typeof value === 'number' ? value : parseFloat(value) || 0;
-        } else {
-            db.pagamentos[index][field] = value.trim();
+            pagamento.valor = typeof value === 'number' ? value : parseFloat(value) || 0;
+        } else if (field === 'status') {
+            // CRÍTICO: Ao mudar status, SEMPRE preserva o valor ORIGINAL
+            const statusAntigo = pagamento.status || statusPreservado;
+            pagamento.status = String(value).trim().toUpperCase();
+            
+            // FORÇA preservação do valor ORIGINAL - nunca perde
+            pagamento.valor = valorPreservado;
+            
+            // Se mudou para EM_ABERTO de PAGO, pode limpar data_pagamento (mas preserva valor)
+            if (pagamento.status === 'EM_ABERTO' && statusAntigo === 'PAGO') {
+                pagamento.data_pagamento = '';
+            }
+            
+            console.log('💾 Status atualizado (SOLUÇÃO DEFINITIVA):', {
+                idIrmao,
+                competencia: competenciaAntiga,
+                statusAntigo,
+                statusNovo: pagamento.status,
+                valorPreservado: pagamento.valor,
+                valorOriginal,
+                pagamentoCompleto: pagamento
+            });
+        } else if (field === 'obs') {
+            pagamento.obs = typeof value === 'string' ? value.trim() : value;
         }
+        
+        // GARANTIA FINAL: Força preservação de TODOS os campos essenciais
+        if (pagamento.valor === undefined || pagamento.valor === null || pagamento.valor === 0) {
+            if (valorPreservado > 0) {
+                pagamento.valor = valorPreservado;
+                console.warn('⚠️ Valor estava perdido! Recuperado:', valorPreservado);
+            }
+        }
+        if (!pagamento.data_pagamento && dataPreservada) {
+            pagamento.data_pagamento = dataPreservada;
+        }
+        if (!pagamento.obs && obsPreservada) {
+            pagamento.obs = obsPreservada;
+        }
+        if (!pagamento.status) {
+            pagamento.status = statusPreservado;
+        }
+        
     } else {
-        // Converte DD/MM/YYYY para YYYY-MM-DD se for data_pagamento
+        // Pagamento não existe - cria novo preservando valor se existir
         let dataPagamento = '';
         if (field === 'data_pagamento') {
             dataPagamento = parseDateForSave(value.trim());
         }
         
-        // Converte valor se necessário
-        let valorPagamento = 0;
+        let valorPagamento = valorOriginal; // Usa valor preservado se existir
         if (field === 'valor') {
-            valorPagamento = typeof value === 'number' ? value : parseFloat(value) || 0;
+            valorPagamento = typeof value === 'number' ? value : parseFloat(value) || valorOriginal;
         }
+        
+        const novoStatus = field === 'status' ? String(value).trim().toUpperCase() : 'EM_ABERTO';
         
         db.pagamentos.push({
             id_irmao: idIrmao,
             competencia: competenciaAntiga,
-            status: field === 'status' ? value : 'EM_ABERTO',
+            status: novoStatus,
             data_pagamento: dataPagamento,
-            obs: field === 'obs' ? value : '',
+            obs: field === 'obs' ? (typeof value === 'string' ? value.trim() : value) : '',
+            valor: valorPagamento
+        });
+        
+        console.log('💾 Novo pagamento criado:', {
+            idIrmao,
+            competencia: competenciaAntiga,
+            status: novoStatus,
             valor: valorPagamento
         });
     }
-    saveDB(true); // Salva com feedback visual
-            renderTable();
+    
+    // Verificação final CRÍTICA: garante que o pagamento está correto antes de salvar
+    const pagamentoFinal = db.pagamentos.find(p => 
+        p.id_irmao === idIrmao && 
+        p.competencia === competenciaAntiga
+    );
+    
+    if (pagamentoFinal) {
+        // ÚLTIMA GARANTIA: se o valor foi perdido, recupera do original
+        if ((pagamentoFinal.valor === undefined || pagamentoFinal.valor === null || pagamentoFinal.valor === 0) && valorOriginal > 0) {
+            pagamentoFinal.valor = valorOriginal;
+            console.warn('⚠️ VALOR RECUPERADO NA VERIFICAÇÃO FINAL:', valorOriginal);
+        }
+        
+        console.log('✅ Pagamento final verificado ANTES de salvar:', {
+            idIrmao,
+            competencia: competenciaAntiga,
+            status: pagamentoFinal.status,
+            valor: pagamentoFinal.valor,
+            valorOriginal,
+            completo: JSON.parse(JSON.stringify(pagamentoFinal))
+        });
+    } else {
+        console.error('❌ ERRO CRÍTICO: Pagamento não encontrado após atualização!');
+    }
+    
+    // Salva e sincroniza para qualquer alteração em pagamentos
+    const deveSincronizar = ['status', 'valor', 'data_pagamento', 'obs', 'competencia'].includes(field);
+    if (deveSincronizar) {
+        saveDBImmediate(true, true);
+    } else {
+        saveDB(true, false);
+    }
+    renderTable();
+}
+
+async function uploadBoletoFromDashboard(idIrmao, competencia, file) {
+    // Valida PDF
+    if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+        alert('Por favor, envie apenas arquivos PDF para boletos.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('boleto', file);
+    formData.append('id_irmao', idIrmao);
+    formData.append('competencia', competencia);
+    
+    try {
+        const response = await fetch('/api/upload-boleto', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error || 'Erro ao enviar boleto');
+        }
+        
+        // Salva a referência do boleto no pagamento
+        let pagamento = db.pagamentos.find(p => p.id_irmao === idIrmao && p.competencia === competencia);
+        if (!pagamento) {
+            pagamento = {
+                id_irmao: idIrmao,
+                competencia: competencia,
+                status: 'EM_ABERTO',
+                data_pagamento: '',
+                obs: '',
+                valor: 0
+            };
+            db.pagamentos.push(pagamento);
+        }
+        
+        const boletoUrl = result.url || `/boletos/${idIrmao}_${competencia}.pdf`;
+        pagamento.boleto = boletoUrl;
+        
+        saveDBImmediate(true, true);
+        renderTable();
+        
+        alert('✅ Boleto enviado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao enviar boleto:', error);
+        alert('❌ Erro ao enviar boleto: ' + error.message);
+    }
 }
 
 function addPagamento(idIrmao) {

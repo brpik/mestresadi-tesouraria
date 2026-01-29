@@ -2,363 +2,310 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Confirmação de Pagamento - Gestão de Mensalidades">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Confirmação de Pagamento">
     <title>Confirmar Pagamento</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* --- VARIÁVEIS E RESET --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-radius: 16px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --success: #10b981;
+            --warning: #f59e0b;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .chat-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 100%;
-            max-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px; /* Padding seguro para mobile */
         }
-        
+
+        /* --- CONTAINER PRINCIPAL --- 
+           Mobile First: Ocupa largura total por padrão
+        */
+        .list-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 40px; /* Espaço para scroll no final */
+        }
+
+        /* Ajuste para Desktop/Tablet: Centraliza e limita largura */
         @media (min-width: 768px) {
-            .chat-container {
-                max-width: 600px;
-                max-height: 90vh;
+            .list-container {
+                max-width: 480px;
+                margin-top: 20px;
             }
         }
-        
-        .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
+
+        /* --- CABEÇALHO --- */
+        .page-header {
             text-align: center;
+            padding: 10px 0;
         }
-        
-        .chat-header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
+
+        .page-header h1 {
+            font-size: 1.5rem; /* ~24px */
             font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
         }
-        
-        .chat-header p {
-            font-size: 16px;
-            opacity: 0.9;
+
+        .page-header p {
+            font-size: 0.875rem; /* ~14px */
+            color: var(--text-muted);
         }
-        
-        @media (max-width: 767px) {
-            .chat-header h1 {
-                font-size: 32px;
-            }
-            .chat-header p {
-                font-size: 18px;
-            }
-        }
-        
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
+
+        /* --- ÁREA DE BUSCA --- */
+        #searchSection {
+            background: var(--bg-card);
             padding: 20px;
-            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .input-group { 
+            margin-bottom: 12px; 
+            width: 100%;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0 16px;
+            height: 52px; /* Altura confortável para toque (min 44px) */
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px; /* Evita zoom no iOS */
+            color: var(--text-main);
+            background: #f9fafb;
+            transition: all 0.2s ease;
+            outline: none;
+            -webkit-appearance: none; /* Remove estilos nativos do iOS */
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        /* --- BOTÃO PRINCIPAL --- */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            height: 52px; /* Altura confortável para toque */
+            padding: 0 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
-        .message {
-            margin-bottom: 15px;
-            animation: fadeIn 0.3s;
+        .btn:active { transform: scale(0.98); }
+
+        /* --- LISTA DE RESULTADOS --- */
+        .list-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
+
+        /* Elementos ocultos (Compatibilidade JS) */
+        .message-avatar, .message-user, .scroll-indicator { display: none !important; }
+
+        /* CARD DE RESULTADOS */
         .message-bot {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
+            width: 100%;
+            animation: slideUp 0.3s ease-out;
         }
-        
-        .message-user {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            flex-direction: row-reverse;
+
+        .message-content {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            border: 1px solid rgba(229, 231, 235, 0.5);
         }
-        
-        .message-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+
+        /* Texto dentro do card */
+        .message-content > div:not(.pendencia-item):not(.btn-confirmar):not(.comprovante-upload) {
+            padding: 20px;
+            color: var(--text-main);
+            font-size: 0.9375rem; /* ~15px */
+            line-height: 1.5;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        /* --- ITEM DA TABELA (Mobile Layout) --- */
+        .pendencia-item {
+            padding: 16px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            flex-direction: column; /* Padrão: Stack vertical para telas pequenas */
+            gap: 4px;
+            position: relative;
+            background: white;
+        }
+
+        /* Barra de status lateral */
+        .pendencia-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--warning);
+        }
+        .pendencia-item.pago::before { background-color: var(--success); }
+
+        /* Tablet/Desktop: Alinha horizontalmente */
+        @media (min-width: 480px) {
+            .pendencia-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 20px;
+            }
+        }
+
+        .pendencia-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .pendencia-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        /* --- UPLOAD E AÇÕES --- */
+        .comprovante-upload {
+            margin: 16px;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            background: #f9fafb;
+            min-height: 80px; /* Área de toque generosa */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
         }
-        
-        @media (max-width: 767px) {
-            .message-avatar {
-                width: 60px;
-                height: 60px;
-                font-size: 28px;
-            }
-        }
-        
-        .message-bot .message-avatar {
-            background: #667eea;
-            color: white;
-        }
-        
-        .message-user .message-avatar {
-            background: #25D366;
-            color: white;
-        }
-        
-        .message-content {
-            background: white;
-            padding: 16px 20px;
-            border-radius: 18px;
-            max-width: 85%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            font-size: 18px;
-            line-height: 1.6;
-        }
-        
-        @media (max-width: 767px) {
-            .message-content {
-                font-size: 20px;
-                padding: 18px 22px;
-                max-width: 90%;
-            }
-        }
-        
-        .message-bot .message-content {
-            border-top-left-radius: 4px;
-        }
-        
-        .message-user .message-content {
-            background: #DCF8C6;
-            border-top-right-radius: 4px;
-        }
-        
-        .input-group {
-            margin: 15px 0;
-        }
-        
-        .input-group input {
+
+        .upload-label-sm {
             width: 100%;
-            padding: 18px 24px;
-            border: 3px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 20px;
-            outline: none;
-            transition: border-color 0.3s;
-            min-height: 60px;
-        }
-        
-        @media (max-width: 767px) {
-            .input-group input {
-                font-size: 22px;
-                padding: 20px 24px;
-                min-height: 70px;
-            }
-        }
-        
-        .input-group input:focus {
-            border-color: #667eea;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 16px 32px;
-            border-radius: 25px;
-            font-size: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            width: 100%;
-            margin-top: 15px;
-            min-height: 60px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .btn-success {
-            background: #28a745;
-            font-size: 22px;
-            padding: 20px 40px;
-            min-height: 70px;
-            font-weight: 700;
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
-        }
-        
-        .btn-success:hover {
-            background: #218838;
-            box-shadow: 0 7px 25px rgba(40, 167, 69, 0.6);
-        }
-        
-        .btn-danger {
-            background: #dc3545;
-            font-size: 18px;
-        }
-        
-        .btn-small {
-            padding: 12px 24px;
-            font-size: 18px;
-            width: auto;
-            margin: 5px 5px 5px 0;
-            min-height: 50px;
-        }
-        
-        @media (max-width: 767px) {
-            .btn {
-                font-size: 22px;
-                padding: 20px 32px;
-                min-height: 70px;
-            }
-            
-            .btn-success {
-                font-size: 24px;
-                padding: 24px 40px;
-                min-height: 80px;
-            }
-        }
-        
-        .pendencia-item {
-            background: #fff3cd;
-            border-left: 6px solid #ffc107;
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 12px;
-            font-size: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .pendencia-item.pago {
-            background: #d4edda;
-            border-left-color: #28a745;
-        }
-        
-        @media (max-width: 767px) {
-            .pendencia-item {
-                padding: 24px;
-                font-size: 20px;
-                margin: 20px 0;
-            }
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        
-        .status-pago {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-em-dia {
-            background: #d1ecf1;
-            color: #0c5460;
-            font-size: 16px;
-            padding: 10px 20px;
-            margin: 10px 0;
-        }
-        
-        .comprovante-upload {
-            margin-top: 10px;
-            padding: 10px;
-            border: 2px dashed #667eea;
-            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
             text-align: center;
         }
         
-        .comprovante-upload input[type="file"] {
-            display: none;
+        .btn-confirmar {
+            width: calc(100% - 32px); /* Margem lateral */
+            margin: 0 16px 20px 16px;
+            background-color: var(--success);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        /* --- BADGES E LOADING --- */
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+            align-self: flex-start; /* No mobile, alinha à esquerda */
         }
         
-        .comprovante-upload label {
-            cursor: pointer;
-            color: #667eea;
-            font-weight: 600;
+        @media (min-width: 480px) {
+            .status-badge {
+                margin-top: 0;
+                margin-left: 10px;
+                align-self: center;
+            }
         }
-        
-        .comprovante-preview {
-            margin-top: 10px;
-            max-width: 100%;
-            border-radius: 8px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
+
+        .status-pendente { background: #fef3c7; color: #92400e; }
+        .status-pago { background: #d1fae5; color: #065f46; }
+
         .loading {
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        .hidden { display: none; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
+
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>💬 Confirmação de Pagamento</h1>
-            <p>A∴R∴L∴S∴ - Sistema de Confirmação</p>
-        </div>
+
+    <div class="list-container">
+
+        <header class="page-header">
+            <h1>Gestão Financeira</h1>
+            <p>Confirmação de Mensalidades</p>
+        </header>
+
+        <section id="searchSection">
+            <div class="input-group">
+                <input type="text" id="searchInput" placeholder="Digite CPF ou Nome..." autocomplete="off">
+            </div>
+            <button class="btn" id="btnSearch">
+                Buscar Pendências
+            </button>
+            <div id="loadingMessage" class="hidden loading">
+                Consultando dados...
+            </div>
+        </section>
+
+        <main class="list-content" id="chatMessages">
+            </main>
         
-        <div class="chat-messages" id="chatMessages">
-            <div class="message message-bot">
-                <div class="message-avatar">🤖</div>
-                <div class="message-content">
-                    <p>Olá! Para confirmar seus pagamentos, por favor informe seu CPF ou nome completo.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div style="padding: 20px; background: white; border-top: 1px solid #e0e0e0;">
-            <div id="searchSection">
-                <div class="input-group">
-                    <input type="text" id="searchInput" placeholder="Digite seu CPF ou nome completo..." autocomplete="off">
-                </div>
-                <button class="btn" id="btnSearch">🔍 Buscar</button>
-                <div id="loadingMessage" class="hidden loading">Carregando seus dados...</div>
-            </div>
-            
-            <div id="confirmSection" class="hidden">
-                <!-- Será preenchido dinamicamente -->
-            </div>
-        </div>
+        <div id="scrollIndicator" class="scroll-indicator"></div>
+
     </div>
-    
+
     <script src="xlsx.full.min.js"></script>
     <script src="confirmacao.js"></script>
+
 </body>
 </html>
