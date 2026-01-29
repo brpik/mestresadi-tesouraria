@@ -3,7 +3,9 @@ let db = {
     irmaos: [],     // { id, nome, whatsapp, cpf, email, data_nascimento, ativo }
     pagamentos: [], // { id_irmao, competencia, status, data_pagamento, obs, valor }
     cobrancas: [],  // logs de cobranças enviadas
-    acessos: []     // logs de acessos a links
+    acessos: [],    // logs de acessos a links
+    despesas: [],   // { id, descricao, valor, data }
+    saldo_base: 0   // saldo atual base
 };
 
 // Mapa CPF -> ID para facilitar conversão
@@ -315,6 +317,11 @@ function initEventListeners() {
     const btnCopyData = document.getElementById('btnCopyData');
     const btnExportReport = document.getElementById('btnExportReport');
     const jsonInput = document.getElementById('jsonInput');
+    const tabCadastroBtn = document.getElementById('tabCadastroBtn');
+    const tabRelatorioBtn = document.getElementById('tabRelatorioBtn');
+    const btnSalvarSaldo = document.getElementById('btnSalvarSaldo');
+    const btnAddDespesa = document.getElementById('btnAddDespesa');
+    const reportMonth = document.getElementById('reportMonth');
     
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
     if (searchInput) searchInput.addEventListener('input', renderTable);
@@ -334,6 +341,11 @@ function initEventListeners() {
     if (btnSyncConfirmacoes) btnSyncConfirmacoes.addEventListener('click', syncConfirmacoes);
     if (btnCopyData) btnCopyData.addEventListener('click', copyAllData);
     if (btnExportReport) btnExportReport.addEventListener('click', exportRelatorioXls);
+    if (tabCadastroBtn) tabCadastroBtn.addEventListener('click', () => switchTab('cadastro'));
+    if (tabRelatorioBtn) tabRelatorioBtn.addEventListener('click', () => switchTab('relatorio'));
+    if (btnSalvarSaldo) btnSalvarSaldo.addEventListener('click', salvarSaldoBase);
+    if (btnAddDespesa) btnAddDespesa.addEventListener('click', adicionarDespesa);
+    if (reportMonth) reportMonth.addEventListener('change', renderRelatorio);
     if (btnLogout) btnLogout.addEventListener('click', () => {
         sessionStorage.removeItem('gestao_mensalidades_authenticated');
         window.location.href = 'index.html';
@@ -418,6 +430,8 @@ function loadFromFileJson() {
                 db.pagamentos = Array.isArray(json.pagamentos) ? json.pagamentos : [];
                 db.cobrancas = Array.isArray(json.cobrancas) ? json.cobrancas : [];
                 db.acessos = Array.isArray(json.acessos) ? json.acessos : [];
+                db.despesas = Array.isArray(json.despesas) ? json.despesas : [];
+                db.saldo_base = typeof json.saldo_base === 'number' ? json.saldo_base : (parseFloat(json.saldo_base) || 0);
                 
                 console.log('📊 Dados atribuídos ao DB:', {
                     irmaos: db.irmaos.length,
@@ -464,6 +478,12 @@ function loadFromStorage() {
             }
             if (!Array.isArray(db.acessos)) {
                 db.acessos = [];
+            }
+            if (!Array.isArray(db.despesas)) {
+                db.despesas = [];
+            }
+            if (typeof db.saldo_base !== 'number') {
+                db.saldo_base = parseFloat(db.saldo_base) || 0;
             }
             rebuildCpfMap();
             console.log(`✅ Dados carregados do storage: ${db.irmaos.length} irmãos, ${db.pagamentos.length} pagamentos`);
@@ -763,7 +783,7 @@ function handleFileSelect(event) {
 }
 
 function processExcelData(rawIrmaos, rawPagamentos) {
-    db = { irmaos: [], pagamentos: [], cobrancas: [], acessos: [] };
+    db = { irmaos: [], pagamentos: [], cobrancas: [], acessos: [], despesas: [], saldo_base: 0 };
     cpfToIdMap = {};
     
     rawIrmaos.forEach((row, index) => {
@@ -861,6 +881,12 @@ function handleDynamicClick(event) {
     if (target.classList.contains('btn-delete-irmao') && target.dataset.irmaoId) {
         event.preventDefault();
         deleteIrmao(parseInt(target.dataset.irmaoId));
+        return;
+    }
+
+    if (target.classList.contains('btn-remove-despesa') && target.dataset.despesaId) {
+        event.preventDefault();
+        removerDespesa(parseInt(target.dataset.despesaId));
         return;
     }
 }
@@ -1571,6 +1597,197 @@ function renderTable() {
     if (db.irmaos.length === 0) {
         console.warn('⚠️ ATENÇÃO: Nenhum irmão encontrado no banco de dados!');
     }
+}
+
+function switchTab(tabName) {
+    const tabCadastro = document.getElementById('tabCadastro');
+    const tabRelatorio = document.getElementById('tabRelatorio');
+    const tabCadastroBtn = document.getElementById('tabCadastroBtn');
+    const tabRelatorioBtn = document.getElementById('tabRelatorioBtn');
+    if (!tabCadastro || !tabRelatorio) return;
+
+    if (tabName === 'relatorio') {
+        tabCadastro.style.display = 'none';
+        tabRelatorio.style.display = 'block';
+        if (tabCadastroBtn) tabCadastroBtn.style.background = '#6c757d';
+        if (tabRelatorioBtn) tabRelatorioBtn.style.background = '#6f42c1';
+        renderRelatorio();
+    } else {
+        tabCadastro.style.display = 'block';
+        tabRelatorio.style.display = 'none';
+        if (tabCadastroBtn) tabCadastroBtn.style.background = '#007bff';
+        if (tabRelatorioBtn) tabRelatorioBtn.style.background = '#6c757d';
+    }
+}
+
+function getCompetenciaSelecionada() {
+    const reportMonth = document.getElementById('reportMonth');
+    if (reportMonth && reportMonth.value) {
+        const [year, month] = reportMonth.value.split('-');
+        return `${year}-${month}`;
+    }
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function renderRelatorio() {
+    const relatorioResumo = document.getElementById('relatorioResumo');
+    const pagamentosRelatorio = document.getElementById('pagamentosRelatorio');
+    const despesasList = document.getElementById('despesasList');
+    const saldoBaseInput = document.getElementById('saldoBaseInput');
+    const competencia = getCompetenciaSelecionada();
+
+    if (saldoBaseInput) {
+        saldoBaseInput.value = db.saldo_base || 0;
+    }
+
+    const nomePorId = {};
+    db.irmaos.forEach(irmao => {
+        nomePorId[irmao.id] = irmao.nome || '';
+    });
+
+    const pagosMes = db.pagamentos.filter(p =>
+        String(p.status || '').toUpperCase() === 'PAGO' && p.competencia === competencia
+    );
+    const totalReceitas = pagosMes.reduce((sum, p) => sum + (p.valor || 0), 0);
+
+    const atrasados = db.pagamentos.filter(p => {
+        const status = String(p.status || '').toUpperCase();
+        return status === 'EM_ABERTO' && p.competencia && p.competencia < competencia;
+    });
+
+    const totalAtrasados = atrasados.reduce((sum, p) => sum + (p.valor || 0), 0);
+
+    const totalDespesas = (db.despesas || []).reduce((sum, d) => sum + (d.valor || 0), 0);
+    const saldoAtual = (db.saldo_base || 0) - totalDespesas;
+
+    if (relatorioResumo) {
+        relatorioResumo.innerHTML = `
+            <div style="background:#e7f3ff; padding:12px 16px; border-radius:8px; border-left:4px solid #007bff;">
+                <strong>Receitas no mês (${formatCompetencia(competencia)}):</strong><br>
+                R$ ${formatCurrency(totalReceitas)}
+            </div>
+            <div style="background:#fff3cd; padding:12px 16px; border-radius:8px; border-left:4px solid #ffc107;">
+                <strong>Pagamentos atrasados:</strong><br>
+                R$ ${formatCurrency(totalAtrasados)} (${atrasados.length})
+            </div>
+            <div style="background:#f8d7da; padding:12px 16px; border-radius:8px; border-left:4px solid #dc3545;">
+                <strong>Despesas lançadas:</strong><br>
+                R$ ${formatCurrency(totalDespesas)}
+            </div>
+            <div style="background:#d4edda; padding:12px 16px; border-radius:8px; border-left:4px solid #28a745;">
+                <strong>Saldo atual (base - despesas):</strong><br>
+                R$ ${formatCurrency(saldoAtual)}
+            </div>
+        `;
+    }
+
+    if (despesasList) {
+        if (!db.despesas || db.despesas.length === 0) {
+            despesasList.innerHTML = '<div style="color:#666;">Nenhuma despesa registrada.</div>';
+        } else {
+            const rows = db.despesas
+                .slice()
+                .sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')))
+                .map(d => `
+                    <tr>
+                        <td>${d.data ? formatDateForDisplay(d.data) : ''}</td>
+                        <td>${d.descricao || ''}</td>
+                        <td style="text-align:right;">R$ ${formatCurrency(d.valor || 0)}</td>
+                        <td style="text-align:center;">
+                            <button class="btn btn-danger btn-small btn-remove-despesa" data-despesa-id="${d.id}">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            despesasList.innerHTML = `
+                <table class="history-table">
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                    ${rows}
+                </table>
+            `;
+        }
+    }
+
+    if (pagamentosRelatorio) {
+        const rows = db.pagamentos
+            .filter(p => p.competencia === competencia)
+            .map(p => `
+                <tr>
+                    <td>${nomePorId[p.id_irmao] || ''}</td>
+                    <td>${formatCompetencia(p.competencia)}</td>
+                    <td>${String(p.status || '').toUpperCase()}</td>
+                    <td style="text-align:right;">R$ ${formatCurrency(p.valor || 0)}</td>
+                    <td>${formatDateForDisplay(p.data_pagamento || '')}</td>
+                </tr>
+            `).join('');
+
+        pagamentosRelatorio.innerHTML = rows.length > 0
+            ? `
+                <table class="history-table">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Competência</th>
+                        <th>Status</th>
+                        <th>Valor</th>
+                        <th>Data Pag.</th>
+                    </tr>
+                    ${rows}
+                </table>
+            `
+            : '<div style="color:#666;">Nenhum pagamento encontrado para esta competência.</div>';
+    }
+}
+
+function salvarSaldoBase() {
+    const saldoBaseInput = document.getElementById('saldoBaseInput');
+    if (!saldoBaseInput) return;
+    const valor = parseFloat(saldoBaseInput.value || '0');
+    db.saldo_base = isNaN(valor) ? 0 : valor;
+    saveDBImmediate(true, true);
+    renderRelatorio();
+}
+
+function adicionarDespesa() {
+    const descricaoEl = document.getElementById('despesaDescricao');
+    const valorEl = document.getElementById('despesaValor');
+    const dataEl = document.getElementById('despesaData');
+    if (!descricaoEl || !valorEl || !dataEl) return;
+
+    const descricao = descricaoEl.value.trim();
+    const valor = parseFloat(valorEl.value || '0');
+    const data = dataEl.value;
+    if (!descricao || !data || isNaN(valor) || valor <= 0) {
+        alert('Informe descrição, data e valor válido.');
+        return;
+    }
+
+    if (!Array.isArray(db.despesas)) db.despesas = [];
+    db.despesas.push({
+        id: Date.now(),
+        descricao,
+        valor,
+        data
+    });
+
+    descricaoEl.value = '';
+    valorEl.value = '';
+    dataEl.value = '';
+
+    saveDBImmediate(true, true);
+    renderRelatorio();
+}
+
+function removerDespesa(id) {
+    if (!Array.isArray(db.despesas)) return;
+    db.despesas = db.despesas.filter(d => d.id !== id);
+    saveDBImmediate(true, true);
+    renderRelatorio();
 }
 
 // --- LÓGICA DE NEGÓCIO ---

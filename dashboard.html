@@ -74,11 +74,17 @@
         <div id="lastUpdate" style="margin-left: auto; font-size: 0.8rem; color: #666;"></div>
     </div>
     <div class="filters">
-        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por nome ou CPF...">
-        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-            <input type="checkbox" id="filterOpenOnly"> Apenas com pendências
-        </label>
-        <div style="display: flex; align-items: center; gap: 5px;">
+        <button id="tabCadastroBtn" class="btn" style="background:#007bff">📋 Cadastro</button>
+        <button id="tabRelatorioBtn" class="btn" style="background:#6f42c1">📊 Relatório</button>
+    </div>
+
+    <div id="tabCadastro">
+        <div class="filters">
+            <input type="text" id="searchInput" class="search-box" placeholder="Buscar por nome ou CPF...">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                <input type="checkbox" id="filterOpenOnly"> Apenas com pendências
+            </label>
+            <div style="display: flex; align-items: center; gap: 5px;">
             <label style="font-weight: bold;">Filtrar por letra:</label>
             <select id="filterAlphabet" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
                 <option value="">Todas</option>
@@ -110,18 +116,53 @@
                 <option value="Z">Z</option>
             </select>
         </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome / CPF / WhatsApp (Clique para editar)</th>
+                    <th>Status (Mês Atual)</th>
+                    <th>Meses em Aberto</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Nome / CPF / WhatsApp (Clique para editar)</th>
-                <th>Status (Mês Atual)</th>
-                <th>Meses em Aberto</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+
+    <div id="tabRelatorio" style="display:none;">
+        <div style="background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:20px;">
+            <h2>📊 Relatório Financeiro</h2>
+            <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end; margin-bottom:15px;">
+                <div>
+                    <label style="display:block; font-weight:bold; margin-bottom:6px;">Competência</label>
+                    <input type="month" id="reportMonth" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:bold; margin-bottom:6px;">Saldo Atual (base)</label>
+                    <input type="number" id="saldoBaseInput" step="0.01" placeholder="0,00" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
+                </div>
+                <button id="btnSalvarSaldo" class="btn btn-success">💾 Salvar Saldo</button>
+            </div>
+            <div id="relatorioResumo" style="display:flex; flex-wrap:wrap; gap:15px;"></div>
+        </div>
+
+        <div style="background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:20px;">
+            <h3>🧾 Despesas e Saídas</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+                <input type="text" id="despesaDescricao" placeholder="Descrição" style="flex:2; min-width:180px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="number" id="despesaValor" step="0.01" placeholder="Valor" style="flex:1; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="date" id="despesaData" style="flex:1; min-width:140px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button id="btnAddDespesa" class="btn btn-danger">➖ Lançar Despesa</button>
+            </div>
+            <div id="despesasList"></div>
+        </div>
+
+        <div style="background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <h3>📄 Pagamentos do Mês</h3>
+            <div id="pagamentosRelatorio"></div>
+        </div>
+    </div>
     <script src="config.js"></script>
     <script src="xlsx.full.min.js"></script>
     <script src="messages.js"></script>
