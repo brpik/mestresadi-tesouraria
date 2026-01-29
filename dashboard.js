@@ -1671,7 +1671,7 @@ async function uploadBoletoFromDashboard(idIrmao, competencia, file) {
     formData.append('competencia', competencia);
     
     try {
-        const response = await fetch('/api/upload-boleto', {
+        const response = await fetch(buildApiUrl('/api/upload-boleto'), {
             method: 'POST',
             body: formData
         });

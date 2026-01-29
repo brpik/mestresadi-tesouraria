@@ -434,7 +434,7 @@ async function uploadComprovante(competencia) {
     previewDiv.innerHTML = '<div style="padding: 10px; color: #856404;">⏳ Enviando comprovante...</div>';
     
     try {
-        const response = await fetch('/api/upload-comprovante', {
+        const response = await fetch(buildApiUrl('/api/upload-comprovante'), {
             method: 'POST',
             body: formData
         });
