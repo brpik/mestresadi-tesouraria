@@ -133,6 +133,70 @@
     </div>
     
     <script>
+        let currentIrmao = null;
+        let acessoBoletosRegistrado = false;
+
+        function getApiBaseUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiParam = String(urlParams.get('api') || '').trim();
+            if (apiParam) {
+                try {
+                    localStorage.setItem('apiBaseUrl', apiParam);
+                } catch (e) {
+                    console.warn('⚠️ Não foi possível salvar apiBaseUrl no localStorage.');
+                }
+            }
+
+            let storedApi = '';
+            try {
+                storedApi = String(localStorage.getItem('apiBaseUrl') || '').trim();
+            } catch (e) {
+                storedApi = '';
+            }
+
+            const appConfig = window.AppConfig || {};
+            const configured = String(appConfig.apiBaseUrl || '').trim();
+            const fromConfig = apiParam || storedApi || configured;
+            if (fromConfig) return fromConfig.replace(/\/+$/, '');
+
+            const origin = String(window.location.origin || '').trim();
+            const isStaticSpace = origin.includes('digitaloceanspaces.com');
+            if (!isStaticSpace && origin && origin !== 'null') {
+                return origin.replace(/\/+$/, '');
+            }
+            return '';
+        }
+
+        function buildApiUrl(path) {
+            const base = getApiBaseUrl();
+            if (!base) return path;
+            const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+            return `${base}${normalizedPath}`;
+        }
+
+        function logAccess(tipo, metadata = null) {
+            const payload = {
+                tipo,
+                id_irmao: currentIrmao ? currentIrmao.id : null,
+                nome: currentIrmao ? currentIrmao.nome : '',
+                url: window.location.href,
+                origem: 'boletos',
+                metadata: metadata || null
+            };
+
+            fetch(buildApiUrl('/api/log-access'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(() => {});
+        }
+
+        function registerBoletosAccessOnce() {
+            if (acessoBoletosRegistrado) return;
+            acessoBoletosRegistrado = true;
+            logAccess('boletos_abertos');
+        }
+
         // Decodifica CPF da URL
         function decodeCpfFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -196,6 +260,9 @@
                     return;
                 }
                 
+                currentIrmao = irmao;
+                registerBoletosAccessOnce();
+
                 // Busca pagamentos em aberto e pagos
                 const pagamentosEmAberto = data.pagamentos.filter(p => 
                     p.id_irmao === irmao.id && 
@@ -233,7 +300,7 @@
                                 ${disponivel ? '' : '<div class="boleto-valor" style="color:#dc3545;">Boleto indisponível</div>'}
                             </div>
                             ${disponivel
-                                ? `<a href="${boletoUrl}" download class="btn-download">📥 Baixar Boleto</a>`
+                                ? `<a href="${boletoUrl}" download class="btn-download" data-competencia="${competencia}" data-tipo="aberto">📥 Baixar Boleto</a>`
                                 : `<span class="btn-download" style="background:#ccc; cursor:not-allowed;">Indisponível</span>`
                             }
                         </div>
@@ -272,7 +339,7 @@
                                 ${disponivel ? '' : '<div class="boleto-valor" style="color:#dc3545;">Boleto indisponível</div>'}
                             </div>
                             ${disponivel
-                                ? `<a href="${boletoUrl}" download class="btn-download" style="background:#6c757d;">📥 Baixar Boleto Pago</a>`
+                                ? `<a href="${boletoUrl}" download class="btn-download" data-competencia="${competencia}" data-tipo="pago" style="background:#6c757d;">📥 Baixar Boleto Pago</a>`
                                 : `<span class="btn-download" style="background:#ccc; cursor:not-allowed;">Indisponível</span>`
                             }
                         </div>
@@ -297,6 +364,15 @@
             return `${month}/${year}`;
         }
         
+        document.addEventListener('click', (event) => {
+            const link = event.target.closest('a.btn-download');
+            if (!link || !link.dataset || !link.dataset.competencia) return;
+            logAccess('boleto_download', {
+                competencia: link.dataset.competencia,
+                tipo: link.dataset.tipo || ''
+            });
+        });
+
         // Carrega boletos ao iniciar
         loadBoletos();
     </script>

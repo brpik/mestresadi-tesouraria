@@ -1,7 +1,9 @@
 // Estrutura do Banco de Dados
 let db = {
     irmaos: [],     // { id, nome, whatsapp, cpf, email, data_nascimento, ativo }
-    pagamentos: []  // { id_irmao, competencia, status, data_pagamento, obs, valor }
+    pagamentos: [], // { id_irmao, competencia, status, data_pagamento, obs, valor }
+    cobrancas: [],  // logs de cobranças enviadas
+    acessos: []     // logs de acessos a links
 };
 
 // Mapa CPF -> ID para facilitar conversão
@@ -414,11 +416,8 @@ function loadFromFileJson() {
                 // Atribui os dados ao db de forma explícita
                 db.irmaos = Array.isArray(json.irmaos) ? json.irmaos : [];
                 db.pagamentos = Array.isArray(json.pagamentos) ? json.pagamentos : [];
-                if (!Array.isArray(json.cobrancas)) {
-                    db.cobrancas = [];
-                } else {
-                    db.cobrancas = json.cobrancas;
-                }
+                db.cobrancas = Array.isArray(json.cobrancas) ? json.cobrancas : [];
+                db.acessos = Array.isArray(json.acessos) ? json.acessos : [];
                 
                 console.log('📊 Dados atribuídos ao DB:', {
                     irmaos: db.irmaos.length,
@@ -462,6 +461,9 @@ function loadFromStorage() {
             db = data;
             if (!Array.isArray(db.cobrancas)) {
                 db.cobrancas = [];
+            }
+            if (!Array.isArray(db.acessos)) {
+                db.acessos = [];
             }
             rebuildCpfMap();
             console.log(`✅ Dados carregados do storage: ${db.irmaos.length} irmãos, ${db.pagamentos.length} pagamentos`);
@@ -761,7 +763,7 @@ function handleFileSelect(event) {
 }
 
 function processExcelData(rawIrmaos, rawPagamentos) {
-    db = { irmaos: [], pagamentos: [], cobrancas: [] };
+    db = { irmaos: [], pagamentos: [], cobrancas: [], acessos: [] };
     cpfToIdMap = {};
     
     rawIrmaos.forEach((row, index) => {

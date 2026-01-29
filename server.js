@@ -33,6 +33,24 @@ function validatePayload(data) {
   }
 }
 
+function loadDbFile() {
+  if (!fs.existsSync(FILE_JSON_PATH)) {
+    return { irmaos: [], pagamentos: [], cobrancas: [], acessos: [] };
+  }
+  const raw = fs.readFileSync(FILE_JSON_PATH, 'utf8');
+  const parsed = JSON.parse(raw || '{}');
+  return {
+    irmaos: Array.isArray(parsed.irmaos) ? parsed.irmaos : [],
+    pagamentos: Array.isArray(parsed.pagamentos) ? parsed.pagamentos : [],
+    cobrancas: Array.isArray(parsed.cobrancas) ? parsed.cobrancas : [],
+    acessos: Array.isArray(parsed.acessos) ? parsed.acessos : []
+  };
+}
+
+function saveDbFile(data) {
+  fs.writeFileSync(FILE_JSON_PATH, JSON.stringify(data, null, 2), 'utf8');
+}
+
 app.put('/api/save-file.json', (req, res) => {
   try {
     const data = req.body;
@@ -40,7 +58,11 @@ app.put('/api/save-file.json', (req, res) => {
 
     const pagamentosPagos = data.pagamentos.filter((p) => p && p.status === 'PAGO');
 
-    fs.writeFileSync(FILE_JSON_PATH, JSON.stringify(data, null, 2), 'utf8');
+    saveDbFile({
+      ...data,
+      cobrancas: Array.isArray(data.cobrancas) ? data.cobrancas : [],
+      acessos: Array.isArray(data.acessos) ? data.acessos : []
+    });
 
     res.json({
       success: true,
@@ -120,6 +142,32 @@ app.post('/api/upload-boleto', uploadBoleto.single('boleto'), (req, res) => {
       filename,
       url: `/boletos/${filename}`
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/log-access', (req, res) => {
+  try {
+    const { tipo, id_irmao, nome, url, origem, metadata } = req.body || {};
+    if (!tipo) {
+      return res.status(400).json({ success: false, error: 'tipo é obrigatório' });
+    }
+
+    const dbFile = loadDbFile();
+    dbFile.acessos = Array.isArray(dbFile.acessos) ? dbFile.acessos : [];
+    dbFile.acessos.push({
+      tipo,
+      id_irmao: id_irmao !== undefined ? id_irmao : null,
+      nome: nome || '',
+      url: url || '',
+      origem: origem || '',
+      metadata: metadata || null,
+      data_hora: new Date().toISOString()
+    });
+
+    saveDbFile(dbFile);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

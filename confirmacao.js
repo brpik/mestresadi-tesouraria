@@ -55,6 +55,31 @@ function buildApiUrl(path) {
     return `${base}${normalizedPath}`;
 }
 
+let acessoConfirmacaoRegistrado = false;
+
+function logAccess(tipo, metadata = null) {
+    const payload = {
+        tipo,
+        id_irmao: currentIrmao ? currentIrmao.id : null,
+        nome: currentIrmao ? currentIrmao.nome : '',
+        url: window.location.href,
+        origem: 'confirmacao',
+        metadata: metadata || null
+    };
+
+    fetch(buildApiUrl('/api/log-access'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    }).catch(() => {});
+}
+
+function registerConfirmacaoAccessOnce() {
+    if (acessoConfirmacaoRegistrado) return;
+    acessoConfirmacaoRegistrado = true;
+    logAccess('confirmacao_aberta');
+}
+
 function encodeCpfForUrl(cpf) {
     const cpfLimpo = String(cpf || '').replace(/\D/g, '');
     if (!cpfLimpo) return '';
@@ -113,6 +138,7 @@ function buscarPorCpf(cpfLimpo) {
     
     currentIrmao = irmao;
     addBotMessage(`Olá <strong>${irmao.nome}</strong>! Encontrei seus dados. Verificando seus pagamentos...`);
+    registerConfirmacaoAccessOnce();
     
     // Esconde a seção de busca quando encontrar automaticamente
     const searchSection = document.getElementById('searchSection');
@@ -240,6 +266,7 @@ function searchIrmao() {
     }
     
     currentIrmao = irmao;
+    registerConfirmacaoAccessOnce();
     showPendencias();
 }
 
