@@ -60,8 +60,8 @@ const comprovanteStorage = multer.diskStorage({
     cb(null, COMPROVANTES_DIR);
   },
   filename: (req, file, cb) => {
-    const idIrmao = String(req.body.id_irmao || '').trim();
-    const competencia = String(req.body.competencia || '').trim();
+    const idIrmao = String(req.body.id_irmao || req.query.id_irmao || '').trim();
+    const competencia = String(req.body.competencia || req.query.competencia || '').trim();
     if (!idIrmao || !competencia) {
       return cb(new Error('id_irmao e competencia são obrigatórios'));
     }
@@ -78,8 +78,8 @@ const boletoStorage = multer.diskStorage({
     cb(null, BOLETOS_DIR);
   },
   filename: (req, file, cb) => {
-    const idIrmao = String(req.body.id_irmao || '').trim();
-    const competencia = String(req.body.competencia || '').trim();
+    const idIrmao = String(req.body.id_irmao || req.query.id_irmao || '').trim();
+    const competencia = String(req.body.competencia || req.query.competencia || '').trim();
     if (!idIrmao || !competencia) {
       return cb(new Error('id_irmao e competencia são obrigatórios'));
     }

@@ -425,16 +425,16 @@ async function uploadComprovante(competencia) {
     
     const file = comprovantes[competencia];
     const formData = new FormData();
-    formData.append('comprovante', file);
     formData.append('id_irmao', currentIrmao.id);
     formData.append('competencia', competencia);
     formData.append('cpf', currentIrmao.cpf);
+    formData.append('comprovante', file);
     
     const previewDiv = document.getElementById(`preview_${competencia}`);
     previewDiv.innerHTML = '<div style="padding: 10px; color: #856404;">⏳ Enviando comprovante...</div>';
     
     try {
-        const response = await fetch(buildApiUrl('/api/upload-comprovante'), {
+        const response = await fetch(buildApiUrl(`/api/upload-comprovante?id_irmao=${encodeURIComponent(currentIrmao.id)}&competencia=${encodeURIComponent(competencia)}`), {
             method: 'POST',
             body: formData
         });
