@@ -317,6 +317,7 @@ function initEventListeners() {
     const btnCopyData = document.getElementById('btnCopyData');
     const btnExportReport = document.getElementById('btnExportReport');
     const jsonInput = document.getElementById('jsonInput');
+    const btnOpenRelatorios = document.getElementById('btnOpenRelatorios');
     const tabCadastroBtn = document.getElementById('tabCadastroBtn');
     const tabRelatorioBtn = document.getElementById('tabRelatorioBtn');
     const btnSalvarSaldo = document.getElementById('btnSalvarSaldo');
@@ -341,6 +342,9 @@ function initEventListeners() {
     if (btnSyncConfirmacoes) btnSyncConfirmacoes.addEventListener('click', syncConfirmacoes);
     if (btnCopyData) btnCopyData.addEventListener('click', copyAllData);
     if (btnExportReport) btnExportReport.addEventListener('click', exportRelatorioXls);
+    if (btnOpenRelatorios) btnOpenRelatorios.addEventListener('click', () => {
+        window.location.href = 'relatorios.html';
+    });
     if (tabCadastroBtn) tabCadastroBtn.addEventListener('click', () => switchTab('cadastro'));
     if (tabRelatorioBtn) tabRelatorioBtn.addEventListener('click', () => switchTab('relatorio'));
     if (btnSalvarSaldo) btnSalvarSaldo.addEventListener('click', salvarSaldoBase);

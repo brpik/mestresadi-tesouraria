@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios e Logs</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background:#f4f4f9; color:#333; margin:0; padding:20px; }
+        h1, h2 { color:#2c3e50; margin:0 0 10px; }
+        .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+        .btn { background:#007bff; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; font-weight:bold; }
+        .btn-secondary { background:#6c757d; }
+        .btn-success { background:#28a745; }
+        .card { background:white; padding:16px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:20px; }
+        table { width:100%; border-collapse: collapse; }
+        th, td { padding:10px 12px; border-bottom:1px solid #eee; text-align:left; font-size:0.9rem; }
+        th { background:#2c3e50; color:white; text-transform: uppercase; font-size:0.75rem; }
+        .muted { color:#666; font-size:0.9rem; }
+        .filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+        input, select { padding:8px; border:1px solid #ddd; border-radius:4px; }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">← Voltar</button>
+        <button id="btnExportLogs" class="btn btn-success">📤 Exportar Logs XLS</button>
+    </div>
+
+    <div class="card">
+        <h1>📑 Relatórios e Logs</h1>
+        <p class="muted">Visualize cobranças enviadas, acessos a links e despesas lançadas.</p>
+    </div>
+
+    <div class="card">
+        <h2>📌 Resumo Financeiro</h2>
+        <div id="resumoFinanceiro" class="muted">Carregando...</div>
+    </div>
+
+    <div class="card">
+        <h2>📨 Cobranças Enviadas</h2>
+        <div class="filters">
+            <input type="text" id="filtroCobranca" placeholder="Filtrar por nome...">
+        </div>
+        <div id="tabelaCobrancas"></div>
+    </div>
+
+    <div class="card">
+        <h2>🔗 Acessos a Links</h2>
+        <div class="filters">
+            <select id="filtroAcessoTipo">
+                <option value="">Todos</option>
+                <option value="confirmacao_aberta">Confirmacao</option>
+                <option value="boletos_abertos">Boletos</option>
+                <option value="boleto_download">Download Boleto</option>
+            </select>
+            <input type="text" id="filtroAcessoNome" placeholder="Filtrar por nome...">
+        </div>
+        <div id="tabelaAcessos"></div>
+    </div>
+
+    <div class="card">
+        <h2>🧾 Despesas</h2>
+        <div id="tabelaDespesas"></div>
+    </div>
+
+    <script src="xlsx.full.min.js"></script>
+    <script src="relatorios.js"></script>
+</body>
+</html>
