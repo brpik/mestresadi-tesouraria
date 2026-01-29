@@ -11,6 +11,7 @@ let db = {
 // Mapa CPF -> ID para facilitar conversão
 let cpfToIdMap = {};
 let serverAvailable = null;
+let listenersInitialized = false;
 
 function getApiBaseUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -288,6 +289,8 @@ async function init() {
 
 // Aguarda carregamento do XLSX e DOM
 function waitForXLSX() {
+    // Garante listeners básicos mesmo se XLSX falhar
+    initEventListeners();
     if (typeof XLSX !== 'undefined') {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
@@ -307,6 +310,8 @@ if (document.readyState === 'loading') {
 }
 
 function initEventListeners() {
+    if (listenersInitialized) return;
+    listenersInitialized = true;
     const fileInput = document.getElementById('fileInput');
     const searchInput = document.getElementById('searchInput');
     const filterOpenOnly = document.getElementById('filterOpenOnly');
