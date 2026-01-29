@@ -315,7 +315,7 @@
       "data_pagamento": "2026-01-29",
       "id_irmao": 11,
       "obs": "Confirmado pelo sistema de confirmação pública",
-      "status": "EM_ABERTO",
+      "status": "PAGO",
       "valor": 325,
       "boleto": "/boletos/11_2026-01.pdf"
     },
@@ -474,7 +474,7 @@
     {
       "id_irmao": 11,
       "competencia": "2026-02",
-      "status": "EM_ABERTO",
+      "status": "PAGO",
       "data_pagamento": "2026-01-29",
       "obs": "Confirmado pelo sistema de confirmação pública",
       "valor": 2000
