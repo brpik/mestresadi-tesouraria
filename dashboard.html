@@ -78,6 +78,30 @@
         <button id="tabCadastroBtn" class="btn" style="background:#007bff">📋 Cadastro</button>
         <button id="tabRelatorioBtn" class="btn" style="background:#6f42c1">📊 Relatório</button>
     </div>
+    <script>
+        // Toggle simples das abas (fallback caso o JS principal falhe)
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnCadastro = document.getElementById('tabCadastroBtn');
+            const btnRelatorio = document.getElementById('tabRelatorioBtn');
+            const tabCadastro = document.getElementById('tabCadastro');
+            const tabRelatorio = document.getElementById('tabRelatorio');
+            if (!btnCadastro || !btnRelatorio || !tabCadastro || !tabRelatorio) return;
+
+            btnCadastro.addEventListener('click', () => {
+                tabCadastro.style.display = 'block';
+                tabRelatorio.style.display = 'none';
+                btnCadastro.style.background = '#007bff';
+                btnRelatorio.style.background = '#6c757d';
+            });
+
+            btnRelatorio.addEventListener('click', () => {
+                tabCadastro.style.display = 'none';
+                tabRelatorio.style.display = 'block';
+                btnCadastro.style.background = '#6c757d';
+                btnRelatorio.style.background = '#6f42c1';
+            });
+        });
+    </script>
 
     <div id="tabCadastro">
         <div class="filters">
