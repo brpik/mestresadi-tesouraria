@@ -94,7 +94,7 @@ const Messages = {
             // Adiciona cada mês com seu valor
             mesesComValores.forEach(({ mes, valor }) => {
                 const valorFormatado = typeof valor === 'number' ? valor.toFixed(2).replace('.', ',') : (valor || '0,00');
-                msg += `• ${mes}: R$ ${valorFormatado}\n`;
+                msg += `* ${mes}: R$ ${valorFormatado}\n`;
             });
 
             msg += `Total em aberto: R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
