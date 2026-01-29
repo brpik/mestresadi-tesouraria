@@ -290,7 +290,11 @@ async function init() {
 // Aguarda carregamento do XLSX e DOM
 function waitForXLSX() {
     // Garante listeners básicos mesmo se XLSX falhar
-    initEventListeners();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initEventListeners, { once: true });
+    } else {
+        initEventListeners();
+    }
     if (typeof XLSX !== 'undefined') {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
@@ -310,8 +314,8 @@ if (document.readyState === 'loading') {
 }
 
 function initEventListeners() {
+    if (document.readyState === 'loading') return;
     if (listenersInitialized) return;
-    listenersInitialized = true;
     const fileInput = document.getElementById('fileInput');
     const searchInput = document.getElementById('searchInput');
     const filterOpenOnly = document.getElementById('filterOpenOnly');
@@ -329,6 +333,9 @@ function initEventListeners() {
     const btnAddDespesa = document.getElementById('btnAddDespesa');
     const reportMonth = document.getElementById('reportMonth');
     
+    if (!fileInput) return;
+    listenersInitialized = true;
+
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
     if (searchInput) searchInput.addEventListener('input', renderTable);
     if (filterOpenOnly) filterOpenOnly.addEventListener('change', renderTable);
