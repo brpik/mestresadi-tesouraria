@@ -54,72 +54,75 @@ app.put('/api/save-file.json', (req, res) => {
   }
 });
 
-const comprovanteStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    ensureDir(COMPROVANTES_DIR);
-    cb(null, COMPROVANTES_DIR);
-  },
-  filename: (req, file, cb) => {
-    const idIrmao = String(req.body.id_irmao || req.query.id_irmao || '').trim();
-    const competencia = String(req.body.competencia || req.query.competencia || '').trim();
-    if (!idIrmao || !competencia) {
-      return cb(new Error('id_irmao e competencia são obrigatórios'));
-    }
-    const ext =
-      path.extname(file.originalname) ||
-      (file.mimetype && file.mimetype.startsWith('image/') ? '.jpg' : '.pdf');
-    cb(null, `${idIrmao}_${competencia}${ext}`);
-  }
-});
-
-const boletoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    ensureDir(BOLETOS_DIR);
-    cb(null, BOLETOS_DIR);
-  },
-  filename: (req, file, cb) => {
-    const idIrmao = String(req.body.id_irmao || req.query.id_irmao || '').trim();
-    const competencia = String(req.body.competencia || req.query.competencia || '').trim();
-    if (!idIrmao || !competencia) {
-      return cb(new Error('id_irmao e competencia são obrigatórios'));
-    }
-    cb(null, `${idIrmao}_${competencia}.pdf`);
-  }
-});
-
 const uploadComprovante = multer({
-  storage: comprovanteStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 const uploadBoleto = multer({
-  storage: boletoStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
+function getField(req, name) {
+  return String((req.body && req.body[name]) || (req.query && req.query[name]) || '').trim();
+}
+
 app.post('/api/upload-comprovante', uploadComprovante.single('comprovante'), (req, res) => {
-  const filename = req.file ? req.file.filename : '';
-  if (!filename) {
-    return res.status(400).json({ success: false, error: 'Arquivo de comprovante não encontrado' });
+  try {
+    const idIrmao = getField(req, 'id_irmao');
+    const competencia = getField(req, 'competencia');
+    if (!idIrmao || !competencia) {
+      return res.status(400).json({ success: false, error: 'id_irmao e competencia são obrigatórios' });
+    }
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, error: 'Arquivo de comprovante não encontrado' });
+    }
+
+    ensureDir(COMPROVANTES_DIR);
+    const ext =
+      path.extname(req.file.originalname) ||
+      (req.file.mimetype && req.file.mimetype.startsWith('image/') ? '.jpg' : '.pdf');
+    const filename = `${idIrmao}_${competencia}${ext}`;
+    const filePath = path.join(COMPROVANTES_DIR, filename);
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    res.json({
+      success: true,
+      message: 'Comprovante enviado com sucesso',
+      filename,
+      url: `/comprovantes/${filename}`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
-  res.json({
-    success: true,
-    message: 'Comprovante enviado com sucesso',
-    filename,
-    url: `/comprovantes/${filename}`
-  });
 });
 
 app.post('/api/upload-boleto', uploadBoleto.single('boleto'), (req, res) => {
-  const filename = req.file ? req.file.filename : '';
-  if (!filename) {
-    return res.status(400).json({ success: false, error: 'Arquivo de boleto não encontrado' });
+  try {
+    const idIrmao = getField(req, 'id_irmao');
+    const competencia = getField(req, 'competencia');
+    if (!idIrmao || !competencia) {
+      return res.status(400).json({ success: false, error: 'id_irmao e competencia são obrigatórios' });
+    }
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, error: 'Arquivo de boleto não encontrado' });
+    }
+
+    ensureDir(BOLETOS_DIR);
+    const filename = `${idIrmao}_${competencia}.pdf`;
+    const filePath = path.join(BOLETOS_DIR, filename);
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    res.json({
+      success: true,
+      message: 'Boleto enviado com sucesso',
+      filename,
+      url: `/boletos/${filename}`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
-  res.json({
-    success: true,
-    message: 'Boleto enviado com sucesso',
-    filename
-  });
 });
 
 app.use((err, req, res, next) => {
