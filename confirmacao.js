@@ -17,6 +17,44 @@ function getBaseUrl() {
     return window.location.href.replace(/[^/]*$/, '');
 }
 
+function getApiBaseUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const apiParam = String(urlParams.get('api') || '').trim();
+    if (apiParam) {
+        try {
+            localStorage.setItem('apiBaseUrl', apiParam);
+        } catch (e) {
+            console.warn('⚠️ Não foi possível salvar apiBaseUrl no localStorage.');
+        }
+    }
+
+    let storedApi = '';
+    try {
+        storedApi = String(localStorage.getItem('apiBaseUrl') || '').trim();
+    } catch (e) {
+        storedApi = '';
+    }
+
+    const appConfig = window.AppConfig || {};
+    const configured = String(appConfig.apiBaseUrl || '').trim();
+    const fromConfig = apiParam || storedApi || configured;
+    if (fromConfig) return fromConfig.replace(/\/+$/, '');
+
+    const origin = String(window.location.origin || '').trim();
+    const isStaticSpace = origin.includes('digitaloceanspaces.com');
+    if (!isStaticSpace && origin && origin !== 'null') {
+        return origin.replace(/\/+$/, '');
+    }
+    return '';
+}
+
+function buildApiUrl(path) {
+    const base = getApiBaseUrl();
+    if (!base) return path;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${base}${normalizedPath}`;
+}
+
 function encodeCpfForUrl(cpf) {
     const cpfLimpo = String(cpf || '').replace(/\D/g, '');
     if (!cpfLimpo) return '';
@@ -650,7 +688,7 @@ function saveData(competenciaConfirmada) {
     console.log('💾 Enviando dados para o servidor...');
     console.log('💾 JSON a ser enviado (primeiros 500 chars):', JSON.stringify(dadosParaSalvar).substring(0, 500));
     
-    fetch('/api/save-file.json', {
+    fetch(buildApiUrl('/api/save-file.json'), {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'

@@ -8,6 +8,44 @@ let db = {
 let cpfToIdMap = {};
 let serverAvailable = null;
 
+function getApiBaseUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const apiParam = String(urlParams.get('api') || '').trim();
+    if (apiParam) {
+        try {
+            localStorage.setItem('apiBaseUrl', apiParam);
+        } catch (e) {
+            console.warn('⚠️ Não foi possível salvar apiBaseUrl no localStorage.');
+        }
+    }
+
+    let storedApi = '';
+    try {
+        storedApi = String(localStorage.getItem('apiBaseUrl') || '').trim();
+    } catch (e) {
+        storedApi = '';
+    }
+
+    const appConfig = window.AppConfig || {};
+    const configured = String(appConfig.apiBaseUrl || '').trim();
+    const fromConfig = apiParam || storedApi || configured;
+    if (fromConfig) return fromConfig.replace(/\/+$/, '');
+
+    const origin = String(window.location.origin || '').trim();
+    const isStaticSpace = origin.includes('digitaloceanspaces.com');
+    if (!isStaticSpace && origin && origin !== 'null') {
+        return origin.replace(/\/+$/, '');
+    }
+    return '';
+}
+
+function buildApiUrl(path) {
+    const base = getApiBaseUrl();
+    if (!base) return path;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${base}${normalizedPath}`;
+}
+
 // --- ABSTRAÇÃO DE STORAGE (funciona como extensão ou localmente) ---
 const Storage = {
     // Verifica se está rodando como extensão Chrome
@@ -197,7 +235,7 @@ async function detectServerAvailability() {
     const timeout = setTimeout(() => controller.abort(), 1500);
     
     try {
-        const response = await fetch('/api/save-file.json', {
+        const response = await fetch(buildApiUrl('/api/save-file.json'), {
             method: 'OPTIONS',
             cache: 'no-store',
             signal: controller.signal
@@ -312,7 +350,7 @@ function loadDB() {
     // Se estiver rodando via file://, carrega do storage
     if (FileLoader.isFileProtocol()) {
         console.warn('⚠️ Detectado protocolo file://. Carregando dados do storage...');
-        loadFromStorage();
+    loadFromStorage();
         return;
     }
     
@@ -465,25 +503,6 @@ function tryLoadFileJsonAuto() {
 let saveTimeout = null;
 let lastSaveTime = null;
 
-// Função para fazer download do file.json atualizado (quando não há servidor)
-function downloadFileJson() {
-    try {
-        const jsonStr = JSON.stringify(db, null, 2);
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.href = url;
-        downloadAnchorNode.download = 'file.json';
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-        URL.revokeObjectURL(url);
-        console.log('📥 file.json baixado automaticamente');
-    } catch (error) {
-        console.error('❌ Erro ao fazer download do file.json:', error);
-    }
-}
-
 // Função para sincronizar com o servidor (file.json)
 async function syncToServer() {
     try {
@@ -495,7 +514,7 @@ async function syncToServer() {
             exemplo: pagamentosComValor[0]
         });
         
-        const response = await fetch('/api/save-file.json', {
+        const response = await fetch(buildApiUrl('/api/save-file.json'), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -519,16 +538,10 @@ async function syncToServer() {
         } else {
             const errorText = await response.text();
             console.error('❌ Erro ao sincronizar com servidor:', response.status, errorText);
-            // Se não há servidor, faz download do file.json
-            console.log('💡 Servidor não disponível. Fazendo download do file.json atualizado...');
-            downloadFileJson();
             return false;
         }
     } catch (error) {
         console.error('❌ Erro de rede ao sincronizar:', error);
-        // Se não há servidor, faz download do file.json
-        console.log('💡 Servidor não disponível. Fazendo download do file.json atualizado...');
-        downloadFileJson();
         return false;
     }
 }
@@ -550,8 +563,7 @@ function saveDB(showFeedback = false, syncServer = false) {
             // Sincroniza com servidor se solicitado
             if (syncServer) {
                 if (serverAvailable === false) {
-                    console.log('💡 Servidor indisponível. Fazendo download do file.json atualizado...');
-                    downloadFileJson();
+                    console.log('💡 Servidor indisponível. Sincronização ignorada.');
                 } else {
                     await syncToServer();
                 }
@@ -587,8 +599,7 @@ async function saveDBImmediate(showFeedback = false, syncServer = false) {
         // Sincroniza com servidor se solicitado
         if (syncServer) {
             if (serverAvailable === false) {
-                console.log('💡 Servidor indisponível. Fazendo download do file.json atualizado...');
-                downloadFileJson();
+                console.log('💡 Servidor indisponível. Sincronização ignorada.');
             } else {
                 await syncToServer();
             }
@@ -1182,12 +1193,12 @@ function renderTable() {
             // Mapeia pendências com valores (incluindo pagamentos criados manualmente)
             pendenciasComValores = pendencias.map(comp => {
                 const pag = pagamentosEmAberto.find(p => p.competencia === comp);
-                return {
+        return {
                     competencia: comp,
                     valor: pag ? (pag.valor || 0) : 0
-                };
-            });
-            
+        };
+    });
+
             // Adiciona pagamentos em aberto que não estão na lista de pendências calculadas (meses futuros ou passados)
             pagamentosEmAberto.forEach(pag => {
                 if (!pendencias.includes(pag.competencia)) {
@@ -1467,8 +1478,8 @@ function updateIrmao(id, field, value) {
             irmao[field] = value.trim();
         }
         saveDB(true); // Salva com feedback visual
-        renderTable();
-    }
+            renderTable();
+        }
 }
 
 function updatePagamento(idIrmao, competenciaAntiga, field, value) {
