@@ -1818,6 +1818,10 @@ function adicionarDespesa() {
     renderRelatorio();
 }
 
+// Expor funcoes para fallback do HTML
+window.salvarSaldoBase = salvarSaldoBase;
+window.adicionarDespesa = adicionarDespesa;
+
 function removerDespesa(id) {
     if (!Array.isArray(db.despesas)) return;
     db.despesas = db.despesas.filter(d => d.id !== id);
