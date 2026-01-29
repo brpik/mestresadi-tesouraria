@@ -6,7 +6,8 @@
       "id": 1,
       "nascimento": "11/26/1968",
       "nome": "AGRINALDO JORGE RODRIGUES",
-      "whatsapp": "556596113306"
+      "whatsapp": "556596113306",
+      "ativo": true
     },
     {
       "ativo": false,
@@ -23,7 +24,8 @@
       "id": 3,
       "nascimento": "3/15/1979",
       "nome": "ALCIDES DA SILVA ALVES",
-      "whatsapp": "556592296850"
+      "whatsapp": "556592296850",
+      "ativo": true
     },
     {
       "ativo": false,
@@ -40,7 +42,8 @@
       "id": 5,
       "nascimento": "8/1/1973",
       "nome": "ARLINDO MARQUES DE SOUZA FILHO",
-      "whatsapp": "556593252842"
+      "whatsapp": "556593252842",
+      "ativo": true
     },
     {
       "cpf": "285.099.941-53",
@@ -48,7 +51,8 @@
       "id": 6,
       "nascimento": "6/22/1966",
       "nome": "AVELINO BOBATO NETO",
-      "whatsapp": "556596461822"
+      "whatsapp": "556596461822",
+      "ativo": true
     },
     {
       "cpf": "311.099.528-05",
@@ -56,7 +60,8 @@
       "id": 7,
       "nascimento": "11/28/1988",
       "nome": "BRUNO DE JESUS ANDRADE",
-      "whatsapp": "5514996882032"
+      "whatsapp": "5514996882032",
+      "ativo": true
     },
     {
       "ativo": false,
@@ -73,7 +78,8 @@
       "id": 9,
       "nascimento": "4/20/1973",
       "nome": "FÁBIO MOREIRA FÉLIX",
-      "whatsapp": "556581411887"
+      "whatsapp": "556581411887",
+      "ativo": true
     },
     {
       "cpf": "221.989.728-16",
@@ -81,7 +87,8 @@
       "id": 10,
       "nascimento": "2/28/1982",
       "nome": "FABRICIO PEREIRA DOS SANTOS",
-      "whatsapp": "556984444435"
+      "whatsapp": "556984444435",
+      "ativo": true
     },
     {
       "cpf": "050.836.121-43",
@@ -89,7 +96,8 @@
       "id": 11,
       "nascimento": "12/4/1986",
       "nome": "GABRIEL LIMA OLIVEIRA",
-      "whatsapp": "5565993523740"
+      "whatsapp": "5565993523740",
+      "ativo": true
     },
     {
       "cpf": "689.173.681-15",
@@ -97,7 +105,8 @@
       "id": 12,
       "nascimento": "6/3/1978",
       "nome": "GLEISSON PEREIRA SEBBA",
-      "whatsapp": "556581384760"
+      "whatsapp": "556581384760",
+      "ativo": true
     },
     {
       "cpf": "022.732.461-70",
@@ -105,7 +114,8 @@
       "id": 13,
       "nascimento": "12/4/1986",
       "nome": "GUSTAVO LIMA DE OLIVEIRA",
-      "whatsapp": "556599903179"
+      "whatsapp": "556599903179",
+      "ativo": true
     },
     {
       "cpf": "040.616.721-42",
@@ -113,7 +123,8 @@
       "id": 14,
       "nascimento": "4/13/1992",
       "nome": "HENRIQUE PRADO OLVÍDIO DE MIRANDA",
-      "whatsapp": "556596205107"
+      "whatsapp": "556596205107",
+      "ativo": true
     },
     {
       "cpf": "488.697.751-00",
@@ -121,7 +132,8 @@
       "id": 15,
       "nascimento": "12/3/1971",
       "nome": "HUGO RODRIGUES PFANNEMULLER",
-      "whatsapp": "556599284858"
+      "whatsapp": "556599284858",
+      "ativo": true
     },
     {
       "cpf": "007.292.511-60",
@@ -129,7 +141,8 @@
       "id": 16,
       "nascimento": "",
       "nome": "LUCAS MANOEL ARRUDA MARINHO",
-      "whatsapp": "556696061382"
+      "whatsapp": "556696061382",
+      "ativo": true
     },
     {
       "cpf": "901.192.581-53",
@@ -137,7 +150,8 @@
       "id": 17,
       "nascimento": "5/27/1980",
       "nome": "MARCELO FIGUEIRA BALBINO DORILEO",
-      "whatsapp": "556592246152"
+      "whatsapp": "556592246152",
+      "ativo": true
     },
     {
       "cpf": "460.622.111-91",
@@ -145,7 +159,8 @@
       "id": 18,
       "nascimento": "10/17/1973",
       "nome": "MARCO AURÉLIO MONTEIRO ARAÚJO",
-      "whatsapp": "556599725859"
+      "whatsapp": "556599725859",
+      "ativo": true
     },
     {
       "cpf": "588.372.722-00",
@@ -153,7 +168,8 @@
       "id": 19,
       "nascimento": "2/28/1977",
       "nome": "MOYSES SABBA NETO",
-      "whatsapp": "556581753019"
+      "whatsapp": "556581753019",
+      "ativo": true
     },
     {
       "cpf": "CPF: 990.170.671-87",
@@ -161,7 +177,8 @@
       "id": 20,
       "nascimento": "",
       "nome": "OUMAR KHALED ARAJI DAHROUG",
-      "whatsapp": "556599407075"
+      "whatsapp": "556599407075",
+      "ativo": true
     },
     {
       "cpf": "012.307.261-10",
@@ -169,7 +186,8 @@
       "id": 21,
       "nascimento": "12/18/1985",
       "nome": "PAULO HENRIQUE BOÇON",
-      "whatsapp": "556584192590"
+      "whatsapp": "556584192590",
+      "ativo": true
     },
     {
       "cpf": "346.559.301-44",
@@ -177,7 +195,8 @@
       "id": 22,
       "nascimento": "8/16/1965",
       "nome": "RENILDO FOLHA ANDRADE",
-      "whatsapp": "556599820695"
+      "whatsapp": "556599820695",
+      "ativo": true
     },
     {
       "cpf": "015.883.430-57",
@@ -185,7 +204,8 @@
       "id": 23,
       "nascimento": "3/7/1987",
       "nome": "RODOLFO DUTRA HAUBERT",
-      "whatsapp": ""
+      "whatsapp": "",
+      "ativo": true
     },
     {
       "cpf": "788.557.481-49",
@@ -193,7 +213,8 @@
       "id": 24,
       "nascimento": "9/15/1975",
       "nome": "RONEI DE OLIVEIRA MARINS",
-      "whatsapp": "556599726625"
+      "whatsapp": "556599726625",
+      "ativo": true
     },
     {
       "cpf": "344.865.341-15",
@@ -201,7 +222,8 @@
       "id": 25,
       "nascimento": "9/7/1963",
       "nome": "SALIM JOANDAT SALIM",
-      "whatsapp": "556599811395"
+      "whatsapp": "556599811395",
+      "ativo": true
     },
     {
       "cpf": "035.038.358-81",
@@ -209,7 +231,8 @@
       "id": 26,
       "nascimento": "11/12/1962",
       "nome": "VANDERLEI MARTELO",
-      "whatsapp": "556584130585"
+      "whatsapp": "556584130585",
+      "ativo": true
     },
     {
       "cpf": "913.227.661-34",
@@ -217,7 +240,8 @@
       "id": 27,
       "nascimento": "",
       "nome": "VICTOR AVELINO DE BARROS TAVARES",
-      "whatsapp": "556599740161"
+      "whatsapp": "556599740161",
+      "ativo": true
     },
     {
       "cpf": "015.548.681-06",
@@ -225,7 +249,8 @@
       "id": 28,
       "nascimento": "",
       "nome": "EDUARDO VAZ DA SILVA",
-      "whatsapp": "556599172406"
+      "whatsapp": "556599172406",
+      "ativo": true
     }
   ],
   "pagamentos": [
@@ -258,7 +283,7 @@
       "data_pagamento": "",
       "id_irmao": 6,
       "obs": "",
-      "status": "EM_ABERTO",
+      "status": "PAGO",
       "valor": 511
     },
     {
@@ -287,11 +312,12 @@
     },
     {
       "competencia": "2026-01",
-      "data_pagamento": "2026-01-28",
+      "data_pagamento": "2026-01-29",
       "id_irmao": 11,
       "obs": "Confirmado pelo sistema de confirmação pública",
-      "status": "PAGO",
-      "valor": 325
+      "status": "EM_ABERTO",
+      "valor": 325,
+      "boleto": "/boletos/11_2026-01.pdf"
     },
     {
       "competencia": "2026-01",
@@ -439,11 +465,19 @@
     },
     {
       "id_irmao": 1,
-      "competencia": "2025-01",
+      "competencia": "2025-12",
       "status": "EM_ABERTO",
       "data_pagamento": "",
       "obs": "",
       "valor": 145
+    },
+    {
+      "id_irmao": 11,
+      "competencia": "2026-02",
+      "status": "EM_ABERTO",
+      "data_pagamento": "2026-01-29",
+      "obs": "Confirmado pelo sistema de confirmação pública",
+      "valor": 2000
     }
   ]
 }
