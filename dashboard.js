@@ -12,6 +12,21 @@ let db = {
 let cpfToIdMap = {};
 let serverAvailable = null;
 let listenersInitialized = false;
+let basicHandlersInitialized = false;
+
+function initBasicHandlers() {
+    if (basicHandlersInitialized) return;
+    basicHandlersInitialized = true;
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!target) return;
+        if (target.id === 'tabCadastroBtn') {
+            switchTab('cadastro');
+        } else if (target.id === 'tabRelatorioBtn') {
+            switchTab('relatorio');
+        }
+    });
+}
 
 function getApiBaseUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -291,8 +306,12 @@ async function init() {
 function waitForXLSX() {
     // Garante listeners básicos mesmo se XLSX falhar
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initEventListeners, { once: true });
+        document.addEventListener('DOMContentLoaded', () => {
+            initBasicHandlers();
+            initEventListeners();
+        }, { once: true });
     } else {
+        initBasicHandlers();
         initEventListeners();
     }
     if (typeof XLSX !== 'undefined') {
