@@ -32,7 +32,7 @@ cd mestresadi-tesouraria
 
 ### 2. Configurar o servidor
 
-O servidor já está configurado para rodar na porta 8001. Você pode alterar no arquivo `server.py` se necessário.
+O servidor já está configurado para rodar na porta 8001. Você pode alterar no arquivo `server.js` se necessário.
 
 ### 3. Opção 1: Rodar com systemd (Recomendado)
 
@@ -54,7 +54,7 @@ Type=simple
 User=seu_usuario
 WorkingDirectory=/var/www/mestresadi-tesouraria
 Environment="PATH=/usr/bin:/usr/local/bin"
-ExecStart=/usr/bin/python3 /var/www/mestresadi-tesouraria/server.py
+ExecStart=/usr/bin/node /var/www/mestresadi-tesouraria/server.js
 Restart=always
 RestartSec=10
 
@@ -80,7 +80,7 @@ sudo systemctl status mestresadi.service
 sudo npm install -g pm2
 
 # Iniciar servidor
-pm2 start server.py --name mestresadi --interpreter python3
+pm2 start server.js --name mestresadi
 
 # Salvar configuração
 pm2 save
@@ -187,7 +187,7 @@ pm2 stop mestresadi
 
 ```
 /var/www/mestresadi-tesouraria/
-├── server.py          # Servidor Python
+├── server.js          # Servidor Node.js
 ├── index.html         # Página de login
 ├── dashboard.html     # Dashboard principal
 ├── confirmacao.html   # Página de confirmação

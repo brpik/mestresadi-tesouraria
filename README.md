@@ -31,10 +31,11 @@ Sistema web para gerenciamento de mensalidades com autenticação por senha.
 
 **NÃO abra diretamente o arquivo `index.html` no navegador** (protocolo `file://`), pois o CORS bloqueará o carregamento do `file.json`.
 
-### Opção 1: Usar o Script Python (Recomendado)
+### Opção 1: Usar Node.js (Recomendado)
 
 ```bash
-python3 server.py
+npm install
+node server.js
 ```
 Depois acesse: `http://localhost:8001/index.html`
 
@@ -52,7 +53,7 @@ chmod +x start-server.sh
 ### Observação importante
 
 Servidores estáticos como `python -m http.server` ou `php -S` **não suportam PUT**,
-então a confirmação de pagamentos **não será salva**. Use sempre o `server.py`.
+então a confirmação de pagamentos **não será salva**. Use sempre o `server.js`.
 
 ### Acesso
 

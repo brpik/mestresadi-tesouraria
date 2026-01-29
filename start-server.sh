@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script para iniciar servidor HTTP local (com suporte a PUT)
+# Script para iniciar servidor HTTP local (Node.js)
 # Execute: bash start-server.sh ou chmod +x start-server.sh && ./start-server.sh
 
 PORT=8001
@@ -12,14 +12,17 @@ echo "=========================================="
 echo ""
 
 # Verifica se Python 3 está instalado
-if command -v python3 &> /dev/null; then
-    echo "✅ Python 3 encontrado"
-    python3 server.py
-elif command -v python &> /dev/null; then
-    echo "✅ Python encontrado"
-    python server.py
+if command -v node &> /dev/null; then
+    echo "✅ Node.js encontrado"
+    if [ -f "package.json" ]; then
+        if [ ! -d "node_modules" ]; then
+            echo "📦 Instalando dependências..."
+            npm install
+        fi
+    fi
+    node server.js
 else
-    echo "❌ Python não encontrado."
-    echo "Instale Python para executar o servidor com suporte a PUT."
+    echo "❌ Node.js não encontrado."
+    echo "Instale Node.js para executar o servidor."
     exit 1
 fi

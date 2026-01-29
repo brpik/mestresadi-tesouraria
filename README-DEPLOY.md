@@ -52,7 +52,7 @@ After=network.target
 Type=simple
 User=www-data
 WorkingDirectory=/var/www/mestresadi-tesouraria
-ExecStart=/usr/bin/python3 /var/www/mestresadi-tesouraria/server.py
+ExecStart=/usr/bin/node /var/www/mestresadi-tesouraria/server.js
 Restart=always
 RestartSec=10
 

@@ -22,9 +22,9 @@ echo -e "${YELLOW}📦 Atualizando sistema...${NC}"
 apt update
 apt upgrade -y
 
-# 2. Instalar Python 3 e pip
-echo -e "${YELLOW}🐍 Instalando Python 3...${NC}"
-apt install -y python3 python3-pip
+# 2. Instalar Node.js e npm
+echo -e "${YELLOW}🟢 Instalando Node.js...${NC}"
+apt install -y nodejs npm
 
 # 3. Instalar Git (se não tiver)
 echo -e "${YELLOW}📥 Instalando Git...${NC}"
@@ -45,13 +45,17 @@ fi
 
 cd mestresadi-tesouraria
 
-# 6. Configurar permissões
+# 6. Instalar dependências Node.js
+echo -e "${YELLOW}📦 Instalando dependências...${NC}"
+npm install
+
+# 7. Configurar permissões
 echo -e "${YELLOW}🔐 Configurando permissões...${NC}"
 chown -R www-data:www-data /var/www/mestresadi-tesouraria
 chmod 755 /var/www/mestresadi-tesouraria
 chmod 644 /var/www/mestresadi-tesouraria/file.json
 
-# 7. Criar serviço systemd
+# 8. Criar serviço systemd
 echo -e "${YELLOW}⚙️  Criando serviço systemd...${NC}"
 cat > /etc/systemd/system/mestresadi.service << 'EOF'
 [Unit]
@@ -63,7 +67,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/mestresadi-tesouraria
 Environment="PATH=/usr/bin:/usr/local/bin"
-ExecStart=/usr/bin/python3 /var/www/mestresadi-tesouraria/server.py
+ExecStart=/usr/bin/node /var/www/mestresadi-tesouraria/server.js
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -73,18 +77,18 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-# 8. Ativar e iniciar serviço
+# 9. Ativar e iniciar serviço
 echo -e "${YELLOW}🔄 Ativando serviço...${NC}"
 systemctl daemon-reload
 systemctl enable mestresadi.service
 systemctl start mestresadi.service
 
-# 9. Configurar firewall
+# 10. Configurar firewall
 echo -e "${YELLOW}🔥 Configurando firewall...${NC}"
 ufw allow 8001/tcp
 ufw --force enable
 
-# 10. Verificar status
+# 11. Verificar status
 echo -e "${GREEN}✅ Verificando status do serviço...${NC}"
 sleep 2
 systemctl status mestresadi.service --no-pager
