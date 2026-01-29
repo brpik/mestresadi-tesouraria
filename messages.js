@@ -86,7 +86,10 @@ const Messages = {
     // Mensagens de WhatsApp (cobrança)
     whatsapp: {
         message: (nome, mesesComValores, total, linkConfirmacao, linkBoletos, linkBoletosPagos) => {
-            let msg = `A∴R∴L∴S∴ Mestre Sadi 98— Respeitável Ir∴ ${nome.split(' ')[0]}, em nossos registros constam mensalidades em aberto:\n\n`;
+            const primeiroNome = (nome || '').split(' ')[0] || '';
+            let msg = `A∴R∴L∴S∴ Mestre Sadi Nº 98 —\n\n`;
+            msg += `Respeitável Ir∴ ${primeiroNome},\n\n`;
+            msg += `Em nossos registros constam mensalidades em aberto:\n\n`;
 
             // Adiciona cada mês com seu valor
             mesesComValores.forEach(({ mes, valor }) => {
@@ -94,20 +97,21 @@ const Messages = {
                 msg += `• ${mes}: R$ ${valorFormatado}\n`;
             });
 
-            msg += `\n💵 Total em aberto: R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
-            
-            // Adiciona link dos boletos se disponível
+            msg += `Total em aberto: R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
+            msg += `📌 Para confirmar pagamentos ou enviar comprovante (prioridade):\n${linkConfirmacao}\n\n`;
+
             if (linkBoletos) {
-                msg += `📄 Para baixar os boletos em aberto, acesse:\n${linkBoletos}\n\n`;
+                msg += `📌 Para baixar os boletos em aberto:\n${linkBoletos}\n\n`;
             }
-            
+
             if (linkBoletosPagos) {
-                msg += `📑 Para ver o extrato de boletos pagos, acesse:\n${linkBoletosPagos}\n\n`;
+                msg += `📌 Para ver o extrato de boletos pagos:\n${linkBoletosPagos}\n\n`;
             }
-            
-            msg += `📋 Para confirmar seus pagamentos ou enviar comprovante, acesse:\n${linkConfirmacao}\n\n`;
-            msg += `Caso já tenha efetuado o pagamento, por favor confirme através do link acima para atualizarmos nossos registros.\n\n`;
-            msg += `Mensagem enviada por sistema automático (sujeita a falhas). T∴F∴A∴.`;
+
+            msg += `Caso já tenha efetuado o pagamento, por gentileza, confirme através do link acima para atualizarmos nossos registros.\n\n`;
+            msg += `Mensagem enviada por sistema automático (sujeita a falhas). Em caso de qualquer dúvida, contate o Ir∴ Tesoureiro.\n\n`;
+            msg += `T∴F∴A∴.\n`;
+            msg += `Ir∴ Gabriel Oliveira — Tesoureiro`;
 
             return msg;
         }
