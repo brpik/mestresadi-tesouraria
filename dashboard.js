@@ -311,6 +311,7 @@ function initEventListeners() {
     const btnRestore = document.getElementById('btnRestore');
     const btnLoadFileJson = document.getElementById('btnLoadFileJson');
     const btnCopyData = document.getElementById('btnCopyData');
+    const btnExportReport = document.getElementById('btnExportReport');
     const jsonInput = document.getElementById('jsonInput');
     
     if (fileInput) fileInput.addEventListener('change', handleFileSelect);
@@ -330,6 +331,7 @@ function initEventListeners() {
     });
     if (btnSyncConfirmacoes) btnSyncConfirmacoes.addEventListener('click', syncConfirmacoes);
     if (btnCopyData) btnCopyData.addEventListener('click', copyAllData);
+    if (btnExportReport) btnExportReport.addEventListener('click', exportRelatorioXls);
     if (btnLogout) btnLogout.addEventListener('click', () => {
         sessionStorage.removeItem('gestao_mensalidades_authenticated');
         window.location.href = 'index.html';
@@ -412,6 +414,11 @@ function loadFromFileJson() {
                 // Atribui os dados ao db de forma explícita
                 db.irmaos = Array.isArray(json.irmaos) ? json.irmaos : [];
                 db.pagamentos = Array.isArray(json.pagamentos) ? json.pagamentos : [];
+                if (!Array.isArray(json.cobrancas)) {
+                    db.cobrancas = [];
+                } else {
+                    db.cobrancas = json.cobrancas;
+                }
                 
                 console.log('📊 Dados atribuídos ao DB:', {
                     irmaos: db.irmaos.length,
@@ -453,6 +460,9 @@ function loadFromStorage() {
     Storage.load('db_azzil', (data) => {
         if (data) {
             db = data;
+            if (!Array.isArray(db.cobrancas)) {
+                db.cobrancas = [];
+            }
             rebuildCpfMap();
             console.log(`✅ Dados carregados do storage: ${db.irmaos.length} irmãos, ${db.pagamentos.length} pagamentos`);
             
@@ -751,7 +761,7 @@ function handleFileSelect(event) {
 }
 
 function processExcelData(rawIrmaos, rawPagamentos) {
-    db = { irmaos: [], pagamentos: [] };
+    db = { irmaos: [], pagamentos: [], cobrancas: [] };
     cpfToIdMap = {};
     
     rawIrmaos.forEach((row, index) => {
@@ -839,6 +849,12 @@ function handleDynamicClick(event) {
         return;
     }
     
+    const waLink = target.closest && target.closest('a.btn-wa');
+    if (waLink && waLink.dataset.irmaoId) {
+        logCobranca(parseInt(waLink.dataset.irmaoId));
+        return;
+    }
+
     // Delete irmao
     if (target.classList.contains('btn-delete-irmao') && target.dataset.irmaoId) {
         event.preventDefault();
@@ -1112,6 +1128,136 @@ function formatCurrency(value) {
     return numValue.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+function buildPendenciasComValores(idIrmao) {
+    const pendencias = calculateOpenMonths(idIrmao);
+    const pagamentosEmAberto = db.pagamentos.filter(p =>
+        p.id_irmao === idIrmao &&
+        !['PAGO', 'ISENTO', 'ACORDO'].includes(p.status)
+    );
+
+    const pendenciasComValores = pendencias.map(comp => {
+        const pag = pagamentosEmAberto.find(p => p.competencia === comp);
+        return {
+            competencia: comp,
+            valor: pag ? (pag.valor || 0) : 0
+        };
+    });
+
+    pagamentosEmAberto.forEach(pag => {
+        if (!pendencias.includes(pag.competencia)) {
+            pendenciasComValores.push({
+                competencia: pag.competencia,
+                valor: pag.valor || 0
+            });
+        }
+    });
+
+    const total = pendenciasComValores.reduce((sum, p) => sum + (p.valor || 0), 0);
+    return { pendenciasComValores, total };
+}
+
+function logCobranca(idIrmao) {
+    const irmao = db.irmaos.find(i => i.id === idIrmao);
+    if (!irmao) return;
+
+    const { pendenciasComValores, total } = buildPendenciasComValores(idIrmao);
+    const entry = {
+        id_irmao: idIrmao,
+            nome: irmao.nome,
+        data_hora: new Date().toISOString(),
+        pendencias: pendenciasComValores,
+        total: total
+    };
+
+    if (!Array.isArray(db.cobrancas)) {
+        db.cobrancas = [];
+    }
+    db.cobrancas.push(entry);
+    saveDBImmediate(false, true);
+}
+
+function exportRelatorioXls() {
+    if (typeof XLSX === 'undefined') {
+        alert('Erro: Biblioteca XLSX não está carregada.');
+        return;
+    }
+
+    const nomePorId = {};
+    db.irmaos.forEach(irmao => {
+        nomePorId[irmao.id] = irmao.nome || '';
+    });
+
+    const pagos = db.pagamentos.filter(p => (p.status || '').toUpperCase() === 'PAGO');
+    const emAberto = db.pagamentos.filter(p => (p.status || '').toUpperCase() === 'EM_ABERTO');
+
+    const pagosRows = pagos.map(p => ({
+        Competencia: formatCompetencia(p.competencia),
+        Nome: nomePorId[p.id_irmao] || '',
+        Valor: Number(p.valor || 0),
+        Data_Pagamento: formatDateForDisplay(p.data_pagamento || ''),
+        Status: 'PAGO'
+    }));
+
+    const emAbertoRows = emAberto.map(p => ({
+        Competencia: formatCompetencia(p.competencia),
+        Nome: nomePorId[p.id_irmao] || '',
+        Valor: Number(p.valor || 0),
+        Data_Pagamento: formatDateForDisplay(p.data_pagamento || ''),
+        Status: (p.status || 'EM_ABERTO').toUpperCase()
+    }));
+
+    const resumoMap = {};
+    db.pagamentos.forEach(p => {
+        const compKey = p.competencia || '';
+        if (!compKey) return;
+        if (!resumoMap[compKey]) {
+            resumoMap[compKey] = { Competencia: formatCompetencia(compKey), Total_Pago: 0, Total_Em_Aberto: 0 };
+        }
+        const valor = Number(p.valor || 0);
+        if ((p.status || '').toUpperCase() === 'PAGO') {
+            resumoMap[compKey].Total_Pago += valor;
+        } else if ((p.status || '').toUpperCase() === 'EM_ABERTO') {
+            resumoMap[compKey].Total_Em_Aberto += valor;
+        }
+    });
+
+    const resumoRows = Object.keys(resumoMap)
+        .sort((a, b) => b.localeCompare(a))
+        .map(key => resumoMap[key]);
+
+    const cobrancasRows = (db.cobrancas || []).map(c => ({
+        Data_Hora: formatDateForDisplay(c.data_hora || ''),
+        Nome: c.nome || '',
+        Total: Number(c.total || 0),
+        Qtd_Pendencias: Array.isArray(c.pendencias) ? c.pendencias.length : 0
+    }));
+
+    const wb = XLSX.utils.book_new();
+    if (pagosRows.length > 0) {
+        const sheetPagos = XLSX.utils.json_to_sheet(pagosRows);
+        XLSX.utils.book_append_sheet(wb, sheetPagos, 'Pagos');
+    }
+    if (emAbertoRows.length > 0) {
+        const sheetAberto = XLSX.utils.json_to_sheet(emAbertoRows);
+        XLSX.utils.book_append_sheet(wb, sheetAberto, 'Em_Aberto');
+    }
+    if (resumoRows.length > 0) {
+        const sheetResumo = XLSX.utils.json_to_sheet(resumoRows);
+        XLSX.utils.book_append_sheet(wb, sheetResumo, 'Resumo');
+    }
+    if (cobrancasRows.length > 0) {
+        const sheetCobrancas = XLSX.utils.json_to_sheet(cobrancasRows);
+        XLSX.utils.book_append_sheet(wb, sheetCobrancas, 'Cobrancas');
+    }
+
+    if (wb.SheetNames.length === 0) {
+        alert('Nenhum dado disponível para exportação.');
+        return;
+    }
+
+    const filename = `relatorio_mensalidades_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+}
 // Converte valor de string para número (R$ 1.234,56 -> 1234.56)
 function parseCurrency(value) {
     if (!value) return 0;
@@ -1324,7 +1470,7 @@ function renderTable() {
                     msg = `Olá ${irmao.nome.split(' ')[0]}, constam em aberto: ${pendenciasFormatadas.join(', ')}. Total: R$ ${formatCurrency(totalPendencias)}. Favor regularizar.`;
                 }
                 const link = `https://wa.me/55${irmao.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
-                waBtn = `<a href="${link}" target="_blank" class="btn-wa">📱 Cobrar</a>`;
+                waBtn = `<a href="${link}" target="_blank" class="btn-wa" data-irmao-id="${irmao.id}">📱 Cobrar</a>`;
             } else if (irmao.whatsapp) {
                 const okText = typeof Messages !== 'undefined' ? Messages.labels.ok : '✅ OK';
                 waBtn = `<span style="color:#28a745; font-size:0.8rem">${okText}</span>`;
