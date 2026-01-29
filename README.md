@@ -36,13 +36,7 @@ Sistema web para gerenciamento de mensalidades com autenticação por senha.
 ```bash
 python3 server.py
 ```
-
-Ou simplesmente:
-```bash
-python3 -m http.server 8000
-```
-
-Depois acesse: `http://localhost:8000/index.html`
+Depois acesse: `http://localhost:8001/index.html`
 
 ### Opção 2: Usar o Script Shell
 
@@ -55,17 +49,15 @@ Ou no macOS/Linux:
 chmod +x start-server.sh
 ./start-server.sh
 ```
+### Observação importante
 
-### Opção 3: Usar PHP (se instalado)
-
-```bash
-php -S localhost:8000
-```
+Servidores estáticos como `python -m http.server` ou `php -S` **não suportam PUT**,
+então a confirmação de pagamentos **não será salva**. Use sempre o `server.py`.
 
 ### Acesso
 
 1. Inicie um servidor HTTP local (veja opções acima)
-2. Acesse `http://localhost:8000/index.html` no navegador
+2. Acesse `http://localhost:8001/index.html` no navegador
 3. Digite a senha: `mestresadi123A@`
 4. Clique em "Entrar"
 
